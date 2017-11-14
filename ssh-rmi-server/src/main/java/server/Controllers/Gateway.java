@@ -1,16 +1,18 @@
-package server;
+package server.Controllers;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
-public class TTT extends UnicastRemoteObject implements TTTService {
+import server.Services.GatewayService;
+
+public class Gateway extends UnicastRemoteObject implements GatewayService {
 	
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	protected TTT() throws RemoteException {
+	protected Gateway() throws RemoteException {
 	}
 	
 	char board[][] = {

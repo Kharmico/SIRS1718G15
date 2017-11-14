@@ -18,14 +18,14 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <mainclass>server.Gateway</mainclass>
+        <mainclass>server.GatewayApplication</mainclass>
         
         <!-- instance number - redefine using -D option - e.g. mvn -Dws.i=2 exec:java -->
         <ws.i>1</ws.i>
 
         <ws.port>808${ws.i}</ws.port>
         
-        <ws.service>TTTService</ws.service>
+        <ws.service>GatewayService</ws.service>
         
     </properties>
 
