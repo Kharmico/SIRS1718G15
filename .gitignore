@@ -1,4 +1,5 @@
-# Created by https://www.gitignore.io/api/java,linux,python,eclipse,windows
+
+# Created by https://www.gitignore.io/api/java,linux,maven,python,windows,eclipse
 
 ### Eclipse ###
 
@@ -98,6 +99,20 @@ hs_err_pid*
 # .nfs files are created when an open file is removed but is still being accessed
 .nfs*
 
+### Maven ###
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# Avoid ignoring Maven wrapper jar file (.jar files are usually ignored)
+!/.mvn/wrapper/maven-wrapper.jar
+
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -164,7 +179,6 @@ instance/
 docs/_build/
 
 # PyBuilder
-target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -221,4 +235,4 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# End of https://www.gitignore.io/api/java,linu
+# End of https://www.gitignore.io/api/java,linux,maven,python,windows,eclipse
