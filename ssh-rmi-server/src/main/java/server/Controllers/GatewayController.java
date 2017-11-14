@@ -5,15 +5,12 @@ import java.rmi.server.UnicastRemoteObject;
 
 import server.Services.GatewayService;
 
-public class Gateway extends UnicastRemoteObject implements GatewayService {
+public class GatewayController extends UnicastRemoteObject implements GatewayService {
 	
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	
-	protected Gateway() throws RemoteException {
-	}
 	
 	char board[][] = {
 		  {'1','2','3'},          /* Initial values are reference numbers */
@@ -23,7 +20,7 @@ public class Gateway extends UnicastRemoteObject implements GatewayService {
 	int nextPlayer = 0;
 	int numPlays = 0;
 
-	
+	public GatewayController() throws RemoteException {}
 	
     public String currentBoard() throws RemoteException {
     	String s = "\n\n " + 

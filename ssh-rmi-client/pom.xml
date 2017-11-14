@@ -25,7 +25,7 @@
 
         <ws.port>808${ws.i}</ws.port>
         
-        <ws.service>TTTService</ws.service>
+        <ws.service>GatewayService</ws.service>
         <ws.uri>localhost</ws.uri>
         
         <ws.url>//${ws.uri}:${ws.port}/${ws.service}</ws.url>

@@ -3,15 +3,15 @@ package client;
 import java.rmi.*;
 import java.util.Scanner;
 
-import server.TTTService;
+import server.Services.GatewayService;
 
 public class User {
-	TTTService ttt;
+	GatewayService ttt;
 	Scanner keyboardSc;
 	int winner = 0;
 	int player = 1;
 	
-	public User(TTTService stub) throws RemoteException {
+	public User(GatewayService stub) throws RemoteException {
 		ttt = stub;
 		keyboardSc = new Scanner(System.in);
 	}
@@ -69,9 +69,9 @@ public class User {
 	
     public static void main(String[] args) throws Exception {
 
-		TTTService server = null;
+    	GatewayService server = null;
 		try {
-			server = (TTTService) Naming.lookup(args[0]);
+			server = (GatewayService) Naming.lookup(args[0]);
 			System.out.println("Found server");
 
 			while(true){

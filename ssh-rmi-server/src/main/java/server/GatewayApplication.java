@@ -3,6 +3,9 @@ package server;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
+import server.Controllers.GatewayController;
+import server.Services.GatewayService;
+
 public class GatewayApplication {
 
 	public static void main(String[] args){
@@ -12,7 +15,7 @@ public class GatewayApplication {
         System.out.println("Main OK");
         
         try{
-            TTTService _ttt = new TTT();
+            GatewayService _ttt = new GatewayController();
             System.out.println("After create");
             
             Registry reg = LocateRegistry.createRegistry(registryPort);
