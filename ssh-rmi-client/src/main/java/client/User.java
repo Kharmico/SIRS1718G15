@@ -1,69 +1,83 @@
 package client;
 
 import java.rmi.*;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
+
+import javax.crypto.SecretKey;
 
 import server.Services.GatewayService;
 
 public class User {
-	GatewayService ttt;
-	Scanner keyboardSc;
-	int winner = 0;
-	int player = 1;
+	private SecretKey serverPublicKey;
+	private GatewayService gateway;
+	private Scanner keyboardSc;
 	
 	public User(GatewayService stub) throws RemoteException {
-		ttt = stub;
+		gateway = stub;
 		keyboardSc = new Scanner(System.in);
 	}
 
-	public int readPlay() {
-		int play;
-		do {
-			System.out.printf("\nPlayer %d, please enter the number of the square "
-							+ "where you want to place your %c (or 0 to refresh the board): \n",
-							player, (player == 1) ? 'X' : 'O');
-			play = keyboardSc.nextInt();
-		} while (play > 10 || play < 0);
-		return play;
+	public String RegisterUser(String name, String password) throws RemoteException {
+		String response = gateway.RegisterUser(null, null, name, password);
+	
+		return response;
 	}
 
-	public void playGame() throws RemoteException {
-		int play;
-		boolean playAccepted;
-
-		do {
-			player = ++player % 2;
-			do {
-				System.out.println(ttt.currentBoard());
-				play = readPlay();
-				if (play > 0 && play < 10) {
-					playAccepted = ttt.play( --play / 3, play % 3, player);
-					if (!playAccepted)
-						System.out.println("Invalid play! Try again.");
-				} 
-				else if(play == 10){
-					ttt.reiniciar();
-					playAccepted = false;
-				}else
-					playAccepted = false;
-			} while (!playAccepted);
-			winner = ttt.checkWinner();
-		} while (winner == -1);
+	public String DeleteUser(String name) throws RemoteException {
+		String response = gateway.DeleteUser(null, null, name);
+	
+		return response;
 	}
 
-	public void congratulate() {
-		int play;
-		if (winner == 2)
-			System.out.printf("\nHow boring, it is a draw\n");
-		else
-			System.out.printf(
-					"\nCongratulations, player %d, YOU ARE THE WINNER!\n",
-					winner);
+	public void GetDeviceStatus() throws RemoteException {
+		List<List<String>> response = gateway.GetDeviceStatus(null);
 		
-		do {
-			System.out.printf("10 para reiniciar; \n");
-			play = keyboardSc.nextInt();
-		} while (play != 10);
+		System.out.println("Device Name\t|\tStatus\t|\tType");
+		for(List<String> device: response) {
+			System.out.println( device.get(0) +"\t|\t"+ device.get(1) +"\t|\t"+ device.get(2));
+		}
+	}
+
+	public void GetDeviceCommands(String deviceName) throws RemoteException {
+		List<String> response = gateway.GetDeviceCommands(null, deviceName);
+		
+		System.out.println("Device Commands");
+		for(String command: response) {
+			System.out.println("-" + command);
+		}
+		
+	}
+
+	public String SendCommand(String command) throws RemoteException {
+		String response = gateway.SendCommand(null, null, command);
+		
+		return response;
+	}
+
+	public String Login(String username, String password, String authString) throws RemoteException {
+		String response = "";
+		SecretKey responseKey = null;
+		
+		if(serverPublicKey != null ) {
+			//Normal Login
+			response = gateway.Login(username, password);
+		}
+		else {
+			//Replenish Login
+			if(authString != null) {
+				responseKey = gateway.ReplenishLogin(null, username, password, authString);
+				
+				response = (responseKey != null)? "OK" : "NOK";
+				
+			}
+			else {
+				response = "NO_AUTH_STRING";
+			}
+		}
+		
+		return response;
 	}
 	
 	
@@ -76,9 +90,6 @@ public class User {
 
 			while(true){
 				User g = new User(server);
-				
-				g.playGame();
-				g.congratulate();
 			}
 			
 			

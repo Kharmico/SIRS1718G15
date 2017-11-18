@@ -15,20 +15,20 @@ public class GatewayApplication {
         System.out.println("Main OK");
         
         try{
-            GatewayService _ttt = new GatewayController();
+            GatewayService controller = new GatewayController();
             System.out.println("After create");
             
             Registry reg = LocateRegistry.createRegistry(registryPort);
-			reg.rebind(name, _ttt);			
+			reg.rebind(name, controller);			
            
-            System.out.println("TTT server ready");
+            System.out.println("Gateway Controller ready");
 
             System.out.println("Awaiting connections");
             System.out.println("Press enter to shutdown");
             System.in.read();
             
         }catch(Exception e) {
-            System.out.println("TTT server main " + e.getMessage());
+            System.out.println("Gateway Controller main " + e.getMessage());
         }
 
 	}
