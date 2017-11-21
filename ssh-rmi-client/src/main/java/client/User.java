@@ -9,15 +9,16 @@ import java.util.Scanner;
 import javax.crypto.SecretKey;
 
 import server.Services.GatewayService;
+import utils.EncryptionUtil;
 
 public class User {
 	private SecretKey serverPublicKey;
 	private GatewayService gateway;
 	public Boolean adminFlag;
 	
-	
 	public User(GatewayService stub) throws RemoteException {
 		gateway = stub;
+		
 	}
 
 	public String RegisterUser(String name, String password) throws RemoteException {
@@ -51,10 +52,17 @@ public class User {
 		
 	}
 
-	public String SendCommand(String deviceName, String command) throws RemoteException {
+	public void SendCommand(String deviceName, String command) throws RemoteException {
 		String response = gateway.SendCommand(null, deviceName,command);
-		
-		return response;
+		if(response.equals("OK")) {
+			System.out.println("Command Succesfully Executed");
+		}
+		else if(response.equals("NOK")) {
+			System.out.println("Command could not be Executed");
+		}
+		else {
+			System.out.println("Something went wrong!");
+		}
 	}
 
 	public String Login(String username, String password, String authString) throws RemoteException {
@@ -70,7 +78,13 @@ public class User {
 			if(authString != null) {
 				responseKey = gateway.ReplenishLogin(null, username, password, authString);
 				
-				response = (responseKey != null)? "OK" : "NOK";
+				if(responseKey != null) {
+					serverPublicKey = responseKey;
+					System.out.println("Successfully Authenticated!");
+				}
+				else {
+					System.out.println("Something went wrong when authenticating!");
+				}
 				
 			}
 			else {

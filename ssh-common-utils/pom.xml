@@ -4,8 +4,8 @@
     <modelVersion>4.0.0</modelVersion>
     <!-- http://maven.apache.org/pom.html#Quick_Overview -->
 
-    <groupId>ssh-rmi</groupId>
-    <artifactId>ssh-rmi-client</artifactId>
+    <groupId>ssh-common</groupId>
+    <artifactId>ssh-common-utils</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -17,32 +17,7 @@
 
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-
-        <mainclass>client.User</mainclass>
-        
-        <!-- instance number - redefine using -D option - e.g. mvn -Dws.i=2 exec:java -->
-        <ws.i>1</ws.i>
-
-        <ws.port>808${ws.i}</ws.port>
-        
-        <ws.service>GatewayService</ws.service>
-        <ws.uri>localhost</ws.uri>
-        
-        <ws.url>//${ws.uri}:${ws.port}/${ws.service}</ws.url>
     </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>ssh-rmi</groupId>
-            <artifactId>ssh-rmi-server</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-		    <groupId>ssh-common</groupId>
-		    <artifactId>ssh-common-utils</artifactId>
-		    <version>1.0-SNAPSHOT</version>
-        </dependency>
-    </dependencies>
 
     <build>
         <plugins>
@@ -61,9 +36,6 @@
                     <!-- to prevent deprecation warning: -->
                     <killAfter>-1</killAfter>
                     <mainClass>${mainclass}</mainClass>
-                    <arguments>
-                        <argument>${ws.url}</argument>
-                    </arguments>
                     <systemProperties>
                     </systemProperties>
                 </configuration>

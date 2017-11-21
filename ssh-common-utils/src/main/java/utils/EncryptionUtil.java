@@ -1,4 +1,4 @@
-package sec.prj.manager.utils;
+package utils;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -42,9 +42,7 @@ public class EncryptionUtil {
     
     private String secretKeyPath = "keys/secretKey.key";
 
-    public EncryptionUtil(){
-
-    }
+    public EncryptionUtil(){}
 
     public EncryptionUtil(String publicKeyPath, String privateKeyPath){
         this.publicKeyPath = publicKeyPath;
