@@ -29,6 +29,15 @@
         
     </properties>
 
+
+    <dependencies>
+        <dependency>
+		    <groupId>ssh-common</groupId>
+		    <artifactId>ssh-common-utils</artifactId>
+		    <version>1.0-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>

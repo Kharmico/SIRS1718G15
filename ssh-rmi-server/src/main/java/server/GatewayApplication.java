@@ -2,6 +2,7 @@ package server;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.Scanner;
 
 import server.Controllers.GatewayController;
 import server.Services.GatewayService;
@@ -15,7 +16,7 @@ public class GatewayApplication {
         System.out.println("Main OK");
         
         try{
-            GatewayService controller = new GatewayController();
+            GatewayController controller = new GatewayController();
             System.out.println("After create");
             
             Registry reg = LocateRegistry.createRegistry(registryPort);
@@ -24,13 +25,40 @@ public class GatewayApplication {
             System.out.println("Gateway Controller ready");
 
             System.out.println("Awaiting connections");
-            System.out.println("Press enter to shutdown");
-            System.in.read();
+            System.out.println("Write \"exit\" to shutdown");
+            commandLineThread.start();
+            cycle(controller);
             
         }catch(Exception e) {
             System.out.println("Gateway Controller main " + e.getMessage());
         }
 
 	}
+	
+	public  static void cycle(GatewayController stub) {
+		while(true){
+			//do stuff
+		}
+	}
+	
+
+	
+	private static Thread commandLineThread = new Thread() {
+        public void run() {
+        	Scanner scanner = new Scanner(System.in);
+
+            while(true) {
+            	switch(scanner.nextLine()) {
+            		case "exit":
+        				System.exit(MAX_PRIORITY);
+            			break;
+            		default:
+            			System.out.println("Unrecognizable command");
+            			break;
+            	
+            	}
+            }
+        }
+    }; 
 
 }

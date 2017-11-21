@@ -248,22 +248,6 @@ public class EncryptionUtil {
         return pubKey;
     }
 
-    public byte[] hash(byte[] textToHash){
-        MessageDigest messageDigest = null;
-        byte[] hash = null;
-
-        try{
-            messageDigest = MessageDigest.getInstance(HASH_ALGORITHM);
-            messageDigest.update(textToHash);
-            hash = messageDigest.digest();
-        } catch (NoSuchAlgorithmException e) {
-            System.err.println("There's no such Hash Algorithm.");
-            e.printStackTrace();
-        }
-
-        return hash;
-    }
-
     public byte[] generateSignature(byte[] dataToBeSigned) throws SignatureException {
         Signature rsaForSign = null;
 
