@@ -37,8 +37,10 @@ public class User {
 		List<List<String>> response = gateway.GetDeviceStatus(null);
 		
 		System.out.println("Device Name\t|\tStatus\t|\tType");
-		for(List<String> device: response) {
-			System.out.println( device.get(0) +"\t|\t"+ device.get(1) +"\t|\t"+ device.get(2));
+		if(response != null) {
+			for(List<String> device: response) {
+				System.out.println( device.get(0) +"\t|\t"+ device.get(1) +"\t|\t"+ device.get(2));
+			}
 		}
 	}
 

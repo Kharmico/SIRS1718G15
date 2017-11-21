@@ -14,6 +14,10 @@ Notice the following maven commands:
 
 -Execute the project: mvn exec:java
 
+You should have the common package installed in your system before coding or running the project:
+
+mvn clean; mvn compile; mvn package
+
 
 Before launching a client, you should be launching the server, these are the example commands:
 
