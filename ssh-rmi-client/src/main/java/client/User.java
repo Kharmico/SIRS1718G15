@@ -1,6 +1,7 @@
 package client;
 
 import java.rmi.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,7 @@ public class User {
 	}
 
 	public void GetDeviceStatus() throws RemoteException {
-		List<List<String>> response = gateway.GetDeviceStatus(null);
+		List<ArrayList<String>> response = gateway.GetDeviceStatus(null);
 		
 		System.out.println("Device Name\t|\tStatus\t|\tType");
 		if(response != null) {
