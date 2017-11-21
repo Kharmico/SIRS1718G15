@@ -2,6 +2,7 @@ package server.Services;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -14,7 +15,7 @@ public interface GatewayService extends Remote {
 	public String DeleteUser(String adminUsername, String adminPassword, String name) throws RemoteException;
 	
 	//General Requests
-	public List<List<String>> GetDeviceStatus(String username) throws RemoteException;
+	public List<ArrayList<String>> GetDeviceStatus(String username) throws RemoteException;
 	
 	public List<String> GetDeviceCommands(String username, String deviceName) throws RemoteException;
 	

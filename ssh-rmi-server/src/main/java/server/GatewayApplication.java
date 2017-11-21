@@ -15,7 +15,7 @@ public class GatewayApplication {
         System.out.println("Main OK");
         
         try{
-            GatewayService controller = new GatewayController();
+            GatewayController controller = new GatewayController();
             System.out.println("After create");
             
             Registry reg = LocateRegistry.createRegistry(registryPort);

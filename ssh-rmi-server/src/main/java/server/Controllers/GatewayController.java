@@ -2,6 +2,7 @@ package server.Controllers;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +14,8 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	
 	private static final long serialVersionUID = 1L;
 	// GatewayController Variables
+	public List<ArrayList<String>> devices = new ArrayList<ArrayList<String>>();
+	
 	
 	// GatewayController Constructor
 	public GatewayController() throws RemoteException {}
@@ -28,9 +31,8 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		return null;
 	}
 
-	public List<List<String>> GetDeviceStatus(String username) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ArrayList<String>> GetDeviceStatus(String username) {
+		return devices;
 	}
 
 	public List<String> GetDeviceCommands(String username, String deviceName) {
