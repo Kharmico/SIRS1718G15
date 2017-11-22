@@ -1,5 +1,6 @@
 package server;
 
+import java.io.IOException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Scanner;
@@ -35,9 +36,12 @@ public class GatewayApplication {
 
 	}
 	
-	public  static void cycle(GatewayController stub) {
+	public  static void cycle(GatewayController stub) throws IOException {
+		int devListenPort = stub.startListeningDevices(0);
+		System.out.println("Listening new devices registration at port " + devListenPort);
 		while(true){
 			//do stuff
+			
 		}
 	}
 	

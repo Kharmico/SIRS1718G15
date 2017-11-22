@@ -1,5 +1,7 @@
 package server.Controllers;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
@@ -11,15 +13,16 @@ import javax.crypto.SecretKey;
 import server.Services.GatewayService;
 
 public class GatewayController extends UnicastRemoteObject implements GatewayService {
-	
+
 	private static final long serialVersionUID = 1L;
 	// GatewayController Variables
 	public List<ArrayList<String>> devices = new ArrayList<ArrayList<String>>();
-	
-	
+	private ServerSocket registerSocket;
+
+
 	// GatewayController Constructor
 	public GatewayController() throws RemoteException {}
-	
+
 	//GatewayController Endpoints
 	public String RegisterUser(String adminUsername, String adminPassword, String name, String password) {
 		// TODO Auto-generated method stub
@@ -53,6 +56,18 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	public String Login(String username, String password) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public String registerNewDevice(){
+		return null;
+
+	}
+
+	public int startListeningDevices(int port) throws IOException{
+		
+			registerSocket = new ServerSocket(port); 		//If port == 0 find an available port to listen for new devices registration
+			return registerSocket.getLocalPort();			//Else listen on the requested port
+		
 	}
 
 }
