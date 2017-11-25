@@ -30,7 +30,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 
 	//GatewayController Endpoints
 	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] nonce, byte[] signature) {
-		
+
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -68,32 +68,55 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		return null;
 
 	}
-	public void startListeningDevices() throws IOException{
-		while (true) { /* or some other condition you wish */
-			Socket connection = registerSocket.accept(); /* will wait here */
-			/* this code is executed when a client connects... */
+	public void startListeningDevices() throws IOException {
+		Thread t1 = new Thread(new Runnable() {
+			public void run() {
 
-			System.out.println("\nNow connected to " 
-					+ connection.getInetAddress().toString() +":" + connection.getPort());
-			
-			InputStream stream = connection.getInputStream();
-			
-			byte[] data = new byte[100];
-			int count = stream.read(data);
-			String deviceName ="";
-			
-			if ( count >0 ) {
-				deviceName = new String(data, "UTF-8");
-				System.out.println();
+
+
+
+				while (true) { /* or some other condition you wish */
+					Socket connection;
+					try {
+						System.out.println("Ready to accept another device...");
+						connection = registerSocket.accept(); /* will wait here */
+						System.out.println("\nNow connected to " 
+								+ connection.getInetAddress().toString() +":" + connection.getPort());
+
+						InputStream in = connection.getInputStream();
+
+						byte[] data = new byte[100];
+						int count = in.read(data);
+						String deviceName ="";
+
+						if ( count >0 ) {
+							deviceName = new String(data, "UTF-8");
+							System.out.println(deviceName);
+						}
+						else {
+							connection.close();
+							continue;
+						};
+
+						Helper con = new Helper(connection); /* call a nanny to take
+	     	                                                            care of it */
+						devConnections.put(deviceName, con); /* make++ sure you keep a ref to it, just in case */
+						con.start();	/* this code is executed when a client connects... */
+						/* tell nanny to get to work as an independent thread */
+
+
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} 
+				}
+
+
 			}
-			else continue;
-			
-			Helper con = new Helper(connection); /* call a nanny to take
-	                                                            care of it */
-			devConnections.put(deviceName, con); /* make++ sure you keep a ref to it, just in case */
-			con.start();						 /* tell nanny to get to work as an independent thread */
+		});  
+		t1.start();
 
-		}
+
 	}
 	public int createListeningSocket(int port) throws IOException{
 
