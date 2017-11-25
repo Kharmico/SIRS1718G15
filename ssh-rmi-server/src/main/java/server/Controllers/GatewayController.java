@@ -27,12 +27,13 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	public GatewayController() throws RemoteException {}
 
 	//GatewayController Endpoints
-	public byte[] RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] nonce, byte[] signature) {
+	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] nonce, byte[] signature) {
+		
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public byte[] DeleteUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] nonce, byte[] signature) {
+	public List<byte[]> DeleteUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] nonce, byte[] signature) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -46,17 +47,17 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		return null;
 	}
 
-	public byte[] SendCommand(byte[] deviceName, byte[] command, byte[] nonce, byte[] signature) {
+	public List<byte[]> SendCommand(byte[] deviceName, byte[] command, byte[] nonce, byte[] signature) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public byte[] ReplenishLogin(byte[] userPublicKey, byte[] username, byte[] password, byte[] authString, byte[] nonce, byte[] signature) {
+	public List<byte[]> ReplenishLogin(byte[] userPublicKey, byte[] username, byte[] password, byte[] authString, byte[] nonce, byte[] signature) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public byte[] Login(byte[] username, byte[] password, byte[] nonce, byte[] signature) {
+	public List<byte[]> Login(byte[] username, byte[] password, byte[] nonce, byte[] signature) {
 		// TODO Auto-generated method stub
 		return null;
 	}
