@@ -25,4 +25,6 @@ public interface GatewayService extends Remote {
 	
 	public List<byte[]> Login(byte[] username, byte[] password, byte[] nonce, byte[] signature) throws RemoteException;
 	
+	public byte[] GetPublicKey() throws RemoteException;
+	
 }

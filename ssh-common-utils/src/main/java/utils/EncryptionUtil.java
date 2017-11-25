@@ -105,7 +105,6 @@ public class EncryptionUtil {
         return secretKey;
     }
 
-
     public void generateKeys(String name){
         try{
 
