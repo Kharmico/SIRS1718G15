@@ -27,36 +27,36 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	public GatewayController() throws RemoteException {}
 
 	//GatewayController Endpoints
-	public String RegisterUser(String adminUsername, String adminPassword, String name, String password) {
+	public byte[] RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] nonce, byte[] signature) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public String DeleteUser(String adminUsername, String adminPassword, String name) {
+	public byte[] DeleteUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] nonce, byte[] signature) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public List<ArrayList<String>> GetDeviceStatus(String username) {
-		return devices;
+	public List<ArrayList<byte[]>> GetDeviceStatus(byte[] nonce, byte[] signature) {
+		return null;
 	}
 
-	public List<String> GetDeviceCommands(String username, String deviceName) {
+	public List<byte[]> GetDeviceCommands(byte[] deviceName, byte[] nonce, byte[] signature) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public String SendCommand(String username, String deviceName, String command) {
+	public byte[] SendCommand(byte[] deviceName, byte[] command, byte[] nonce, byte[] signature) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public SecretKey ReplenishLogin(SecretKey userPublicKey, String username, String password, String authString) {
+	public byte[] ReplenishLogin(byte[] userPublicKey, byte[] username, byte[] password, byte[] authString, byte[] nonce, byte[] signature) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public String Login(String username, String password) {
+	public byte[] Login(byte[] username, byte[] password, byte[] nonce, byte[] signature) {
 		// TODO Auto-generated method stub
 		return null;
 	}
