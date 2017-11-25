@@ -42,7 +42,7 @@ public class User {
 		
 	}
 
-	public String RegisterUser(String adminName, String adminPassword, String name, String password) throws RemoteException {
+	public String RegisterUser(String adminName, String adminPassword, String name, String password) throws RemoteException, UnsupportedEncodingException {
 		//make nounce
 		String timestamp = this.getTimestamp();
 		String uuid = this.getUUID();
@@ -53,7 +53,12 @@ public class User {
 		
 		String pureSignature = adminName + adminPassword + name + password + pureNounce;
 		
-		byte[] signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
+		byte[] signature = null;
+		try {
+			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
+		} catch (SignatureException e) {
+			return "[ERROR] Couldn't generate signature";
+		}
 		
 		//encrypt
 		byte[] aName = encryption.encrypt(adminName.getBytes(UTF8));
@@ -87,20 +92,109 @@ public class User {
 		
 	}
 
-	public String DeleteUser(String adminName, String adminPassword, String name) throws RemoteException {
-		String response = gateway.DeleteUser(null, null, name);
+	public String DeleteUser(String adminName, String adminPassword, String name) throws RemoteException, UnsupportedEncodingException {
+		//make nounce
+		String timestamp = this.getTimestamp();
+		String uuid = this.getUUID();
+		
+		String pureNounce = uuid + "%" + timestamp;
+		
+		//make signature
+		
+		String pureSignature = adminName + adminPassword + name + pureNounce;
+		
+		byte[] signature = null;
+		try {
+			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
+		} catch (SignatureException e) {
+			return "[ERROR] Couldn't generate signature";
+		}
+		
+		//encrypt
+		byte[] aName = encryption.encrypt(adminName.getBytes(UTF8));
+		byte[] aPassword = encryption.encrypt(adminPassword.getBytes(UTF8));
+
+		byte[] nName = encryption.encrypt(name.getBytes(UTF8));
+		
+		byte[] nounce = encryption.encrypt(pureNounce.getBytes(UTF8));
+		
+		
+		List<byte[]> response = gateway.DeleteUser(aName, aPassword, nName, nounce, signature);
 	
-		return response;
+		//decrypt response
+		String pureResponse = new String(encryption.decrypt(response.get(3)), UTF8);
+
+		
+		try {	
+			if(this.checkResponse(response.get(0), response.get(1), pureResponse)) {
+				return pureResponse;
+			}
+			return "Something went wrong with your request!";
+			
+		} catch (UnsupportedEncodingException e) {
+			return "[WARNING] Unsupported encoding!";
+		}catch (ParseException e) {
+			return "[WARNING] Couldn't parse some data!";
+		}catch (SignatureException e) {
+			return "[WARNING] Couldn't verify some data!";
+		}
 	}
 
-	public void GetDeviceStatus() throws RemoteException {
-		List<ArrayList<String>> response = gateway.GetDeviceStatus(null);
+	public void GetDeviceStatus() throws RemoteException, UnsupportedEncodingException {
+		//make nounce
+		String timestamp = this.getTimestamp();
+		String uuid = this.getUUID();
 		
-		System.out.println("Device Name\t|\tStatus\t|\tType");
-		if(response != null) {
-			for(List<String> device: response) {
-				System.out.println( device.get(0) +"\t|\t"+ device.get(1) +"\t|\t"+ device.get(2));
+		String pureNounce = uuid + "%" + timestamp;
+		
+		//make signature
+		
+		String pureSignature = "getDeviceStatus" + pureNounce;
+		
+		byte[] signature = null;
+		try {
+			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
+		} catch (SignatureException e) {
+			System.out.println("[ERROR] Couldn't generate signature");
+		}
+		
+		//encrypt		
+		byte[] nounce = encryption.encrypt(pureNounce.getBytes(UTF8));
+		
+		
+		List<ArrayList<byte[]>> response = gateway.GetDeviceStatus(nounce, signature);
+		
+		List<ArrayList<byte[]>> subResponse = response.subList(1, response.size());
+		
+		//decrypt response
+		List<ArrayList<String>> pureResponse = new ArrayList<ArrayList<String>>();
+
+		for(ArrayList<byte[]> byteArray: subResponse) {
+			String deviceName = new String(byteArray.get(0), UTF8);
+			String deviceStatus = new String(byteArray.get(1), UTF8);
+			String deviceType = new String(byteArray.get(2), UTF8);
+			
+			pureResponse.add(new ArrayList<String>(Arrays.asList(deviceName, deviceStatus, deviceType)));
+		}
+		
+		try {	
+			if(this.checkResponse(response.get(0).get(0), response.get(0).get(1), pureResponse.toString())) {
+				System.out.println("Device Name\t|\tStatus\t|\tType");
+				if(response != null) {
+					for(int i = 1; i < pureResponse.size(); i++) {
+						List<String> device = pureResponse.get(i);
+						System.out.println( device.get(0) +"\t|\t"+ device.get(1) +"\t|\t"+ device.get(2));
+					}
+				}
 			}
+			System.out.println("Something went wrong with your request!");
+			
+		} catch (UnsupportedEncodingException e) {
+			System.out.println("[WARNING] Unsupported encoding!");
+		}catch (ParseException e) {
+			System.out.println("[WARNING] Couldn't parse some data!");
+		}catch (SignatureException e) {
+			System.out.println("[WARNING] Couldn't verify some data!");
 		}
 	}
 
