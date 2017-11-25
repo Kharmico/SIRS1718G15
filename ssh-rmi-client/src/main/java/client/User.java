@@ -29,7 +29,6 @@ public class User {
 	
 	
 	//Encryption
-	private Key serverPublicKey;
 	private EncryptionUtil svEncryption;
 	private EncryptionUtil encryption;
 	private ArrayList<String> nounces = new ArrayList<String>();
@@ -43,8 +42,9 @@ public class User {
 	public User(GatewayService stub) throws RemoteException {
 		gateway = stub;
 		encryption = new EncryptionUtil();
-		encryption.generateKeys("user");	
+		encryption.generateKeys("user");
 		
+		svEncryption.setPublicKey(svEncryption.byteArrayToPubKey(svEncryption.base64Decoder(stub.GetPublicKey())), "Gateway");
 	}
 
 	public void RegisterUser(String adminName, String adminPassword, String name, String password) throws RemoteException, UnsupportedEncodingException {
@@ -60,19 +60,19 @@ public class User {
 		
 		byte[] signature = null;
 		try {
-			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
+			signature = svEncryption.generateSignature(pureSignature.getBytes(UTF8));
 		} catch (SignatureException e) {
 			System.out.println("[ERROR] Couldn't generate signature");
 		}
 		
 		//encrypt
-		byte[] aName = encryption.encrypt(adminName.getBytes(UTF8));
-		byte[] aPassword = encryption.encrypt(adminPassword.getBytes(UTF8));
+		byte[] aName = svEncryption.encrypt(adminName.getBytes(UTF8));
+		byte[] aPassword = svEncryption.encrypt(adminPassword.getBytes(UTF8));
 
-		byte[] nName = encryption.encrypt(name.getBytes(UTF8));
-		byte[] nPassword = encryption.encrypt(password.getBytes(UTF8));
+		byte[] nName = svEncryption.encrypt(name.getBytes(UTF8));
+		byte[] nPassword = svEncryption.encrypt(password.getBytes(UTF8));
 		
-		byte[] nounce = encryption.encrypt(pureNounce.getBytes(UTF8));
+		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
 		
 		
 		List<byte[]> response = gateway.RegisterUser(aName, aPassword, nName, nPassword, nounce, signature);
@@ -122,18 +122,18 @@ public class User {
 		
 		byte[] signature = null;
 		try {
-			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
+			signature = svEncryption.generateSignature(pureSignature.getBytes(UTF8));
 		} catch (SignatureException e) {
 			System.out.println("[ERROR] Couldn't generate signature");
 		}
 		
 		//encrypt
-		byte[] aName = encryption.encrypt(adminName.getBytes(UTF8));
-		byte[] aPassword = encryption.encrypt(adminPassword.getBytes(UTF8));
+		byte[] aName = svEncryption.encrypt(adminName.getBytes(UTF8));
+		byte[] aPassword = svEncryption.encrypt(adminPassword.getBytes(UTF8));
 
-		byte[] nName = encryption.encrypt(name.getBytes(UTF8));
+		byte[] nName = svEncryption.encrypt(name.getBytes(UTF8));
 		
-		byte[] nounce = encryption.encrypt(pureNounce.getBytes(UTF8));
+		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
 		
 		
 		List<byte[]> response = gateway.DeleteUser(aName, aPassword, nName, nounce, signature);
@@ -181,13 +181,13 @@ public class User {
 		
 		byte[] signature = null;
 		try {
-			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
+			signature = svEncryption.generateSignature(pureSignature.getBytes(UTF8));
 		} catch (SignatureException e) {
 			System.out.println("[ERROR] Couldn't generate signature");
 		}
 		
 		//encrypt		
-		byte[] nounce = encryption.encrypt(pureNounce.getBytes(UTF8));
+		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
 		
 		
 		List<ArrayList<byte[]>> response = gateway.GetDeviceStatus(nounce, signature);
@@ -237,15 +237,15 @@ public class User {
 		
 		byte[] signature = null;
 		try {
-			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
+			signature = svEncryption.generateSignature(pureSignature.getBytes(UTF8));
 		} catch (SignatureException e) {
 			System.out.println("[ERROR] Couldn't generate signature");
 		}
 		
 		//encrypt
-		byte[] dName = encryption.encrypt(deviceName.getBytes(UTF8));
+		byte[] dName = svEncryption.encrypt(deviceName.getBytes(UTF8));
 		
-		byte[] nounce = encryption.encrypt(pureNounce.getBytes(UTF8));
+		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
 		
 		List<byte[]> response = gateway.GetDeviceCommands(dName, nounce, signature);
 		
@@ -291,16 +291,16 @@ public class User {
 		
 		byte[] signature = null;
 		try {
-			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
+			signature = svEncryption.generateSignature(pureSignature.getBytes(UTF8));
 		} catch (SignatureException e) {
 			System.out.println("[ERROR] Couldn't generate signature");
 		}
 		
 		//encrypt
-		byte[] dName = encryption.encrypt(deviceName.getBytes(UTF8));
-		byte[] sCommand = encryption.encrypt(command.getBytes(UTF8));
+		byte[] dName = svEncryption.encrypt(deviceName.getBytes(UTF8));
+		byte[] sCommand = svEncryption.encrypt(command.getBytes(UTF8));
 		
-		byte[] nounce = encryption.encrypt(pureNounce.getBytes(UTF8));
+		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
 		
 		
 		List<byte[]> response = gateway.SendCommand(dName, sCommand, nounce, signature);
@@ -348,25 +348,25 @@ public class User {
 		
 		byte[] signature = null;
 		try {
-			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
+			signature = svEncryption.generateSignature(pureSignature.getBytes(UTF8));
 		} catch (SignatureException e) {
 			System.out.println("[ERROR] Couldn't generate signature");
 		}
 		
 		//encrypt
-		byte[] name = encryption.encrypt(username.getBytes(UTF8));
-		byte[] pass = encryption.encrypt(password.getBytes(UTF8));
+		byte[] name = svEncryption.encrypt(username.getBytes(UTF8));
+		byte[] pass = svEncryption.encrypt(password.getBytes(UTF8));
 
 		
-		byte[] nounce = encryption.encrypt(pureNounce.getBytes(UTF8));
+		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
 		
 		//TODO: Later Check if the user has a token! This should happen to every method
-		if(svEncryption != null ) {
+		if(authString.equals("")) {
 			//Normal Login
 			response = gateway.Login(name, pass, nounce, signature);
 			
 			//decrypt response
-			String pureResponse = new String(encryption.decrypt(response.get(3)), UTF8);
+			String pureResponse = new String(svEncryption.decrypt(response.get(3)), UTF8);
 
 			
 			try {	
@@ -396,42 +396,35 @@ public class User {
 		}
 		else {
 			//Replenish Login
-			if(!authString.equals("")) {
-				byte[] auth = encryption.encrypt(authString.getBytes(UTF8));
-				
-				response = gateway.ReplenishLogin(encryption.pubKeyToByteArray(), name, pass, auth, nounce, signature);
-				
-				//decrypt response
-				String pureResponse = new String(response.get(3), UTF8);
+			byte[] auth = svEncryption.encrypt(authString.getBytes(UTF8));
+			
+			response = gateway.ReplenishLogin(encryption.pubKeyToByteArray(), name, pass, auth, nounce, signature);
+			
+			//decrypt response
+			String pureResponse = new String(response.get(3), UTF8);
 
-				
-				try {	
-					if(this.checkResponse(response.get(0), response.get(1), pureResponse)) {
-						if(response != null) {
-							serverPublicKey = encryption.byteArrayToPubKey(response.get(3));
-							System.out.println("Successfully Authenticated!");
-						}
-						else {
-							System.out.println("Something went wrong when authenticating!");
-						}
+			try {	
+				if(this.checkResponse(response.get(0), response.get(1), pureResponse)) {
+					if(pureResponse.equals("OK")) {
+						System.out.println("Command Succesfully Executed");
 					}
-					
-					System.out.println("Something went wrong with your request!");
-					
-					} catch (UnsupportedEncodingException e) {
-						System.out.println("[WARNING] Unsupported encoding!");
-					}catch (ParseException e) {
-						System.out.println("[WARNING] Couldn't parse some data!");
-					}catch (SignatureException e) {
-						System.out.println("[WARNING] Couldn't verify some data!");
+					else if(pureResponse.equals("NOK")) {
+						System.out.println("Command could not be Executed");
 					}
+					else {
+						System.out.println("Something went wrong!");
+					}
+				}
 				
-				return;
+				System.out.println("Something went wrong with your request!");
 				
-			}
-			else {
-				System.out.println("NO_AUTH_STRING");
-			}
+				} catch (UnsupportedEncodingException e) {
+					System.out.println("[WARNING] Unsupported encoding!");
+				}catch (ParseException e) {
+					System.out.println("[WARNING] Couldn't parse some data!");
+				}catch (SignatureException e) {
+					System.out.println("[WARNING] Couldn't verify some data!");
+				}
 			
 			return;
 		}

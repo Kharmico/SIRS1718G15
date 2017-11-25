@@ -14,8 +14,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.util.Date;
@@ -85,6 +83,50 @@ public class EncryptionUtil {
         }
 
         return publicKey;
+    }
+    
+    public void setPrivateKey(Key key, String name) {
+    	File fileKey = new File("keys/"+name+"PrivateKey.key");
+    	
+    	if(fileKey.getParentFile() != null){
+    		fileKey.getParentFile().mkdirs();
+        }
+
+    	try {
+			fileKey.createNewFile();
+
+			ObjectOutputStream fileKeyOutputStream = new ObjectOutputStream(new FileOutputStream(fileKey));
+			fileKeyOutputStream.writeObject(key);
+			fileKeyOutputStream.close();
+            
+            publicKeyPath = fileKey.getPath();
+			
+    	} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+       
+    public void setPublicKey(Key key, String name) {
+    	File fileKey = new File("keys/"+name+"PublicKey.key");
+    	
+    	if(fileKey.getParentFile() != null){
+    		fileKey.getParentFile().mkdirs();
+        }
+
+    	try {
+			fileKey.createNewFile();
+
+			ObjectOutputStream fileKeyOutputStream = new ObjectOutputStream(new FileOutputStream(fileKey));
+			fileKeyOutputStream.writeObject(key);
+			fileKeyOutputStream.close();
+            
+            publicKeyPath = fileKey.getPath();
+			
+    	} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
     
     public SecretKey getSecretKey(){
