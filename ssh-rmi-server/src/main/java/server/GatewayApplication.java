@@ -38,8 +38,8 @@ public class GatewayApplication {
 	
 	public  static void cycle(GatewayController stub) throws IOException {
 		int devListenPort = stub.createListeningSocket(0);
-		stub.startListeningDevices();
 		System.out.println("Listening new devices registration at port " + devListenPort);
+		stub.startListeningDevices();
 		while(true){
 			//do stuff
 			

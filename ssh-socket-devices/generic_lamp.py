@@ -4,6 +4,8 @@ from sys import getsizeof
 host = ''
 port = 5560
 
+GateWaySocket = ''
+
 storedValue = "Yo, what's up?"
 turnedON = True
 myName = "Lamp"
@@ -67,6 +69,15 @@ def dataTransfer(conn, s):
             print("Our server is shutting down.")
             s.close()
             return
+        elif command.startswith( 'CONNECT' ):
+            global GateWaySocket
+            URL = command.split()[1].split(':')
+            GateWaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            GateWaySocket.connect((URL[0], int(URL[1])))
+            print (socket.getaddrinfo(URL[0], int(URL[1])))
+            buffer_size = 100            
+            reply = myName + '\n'
+            GateWaySocket.sendall(bytes(myName, 'utf-8'))
         else:
             reply = 'Unknown Command'
         # Send the reply back to the client
