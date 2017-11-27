@@ -1,5 +1,7 @@
 import socket               # Import socket module
+import _thread
 from sys import getsizeof
+from random import randint
 
 host = ''
 port = 5560
@@ -8,7 +10,7 @@ GateWaySocket = ''
 
 storedValue = "Yo, what's up?"
 turnedON = True
-myName = "Lamp"
+myName = "Lamp" + str(randint(0,10))
 
 def setupServer():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -78,11 +80,62 @@ def dataTransfer(conn, s):
             buffer_size = 100            
             reply = myName + '\n'
             GateWaySocket.sendall(bytes(myName, 'utf-8'))
+            try:
+                _thread.start_new_thread( serveGateway, (GateWaySocket, ) )
+            except:
+                print ("Error: unable to start thread")
+            
         else:
             reply = 'Unknown Command'
         # Send the reply back to the client
         conn.sendall(bytes(reply, 'utf-8')) 
         print("Data has been sent!")
+    conn.close()
+    
+    
+
+def serveGateway(conn):
+    # A big loop that sends/receives data until told not to.
+    print ("Handling Gateway")
+    while True:
+        # Receive the data
+        data = conn.recv(1028) # receive the data
+        data = data.decode('utf-8')
+        data = data.strip()
+        print("data value from Gateway: " + data)
+        # Split the data such that you separate the command
+        # from the rest of the data.
+        command = str(data)
+        print("data length from Gateway: " + str(getsizeof(command)))
+        reply = ""
+        if command == "GETSTATUS":
+            reply = GETSTATUS()
+            print (command)
+            print (reply)
+        elif command == 'REPEAT':
+            reply = REPEAT(data)
+        elif command == 'SWITCH':
+            reply = switchLamp()
+        elif command == 'EXIT':
+            print("Our Gateway has left us :(")
+            break
+        elif command == 'KILL':
+            print("Our device is shutting down.")
+            return
+        elif command.startswith( 'CONNECT' ):
+            global GateWaySocket
+            URL = command.split()[1].split(':')
+            GateWaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            GateWaySocket.connect((URL[0], int(URL[1])))
+            print (socket.getaddrinfo(URL[0], int(URL[1])))
+            buffer_size = 100            
+            reply = myName + '\n'
+            GateWaySocket.sendall(bytes(myName, 'utf-8'))
+        else:
+            reply = 'Unknown Command'
+        # Send the reply back to the client
+        conn.sendall(bytes(reply, 'utf-8')) 
+        print("[GATEWAY] Data has been sent!")
     conn.close()
 
 s = setupServer()

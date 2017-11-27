@@ -3,9 +3,11 @@ package server;
 import java.io.IOException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.Map;
 import java.util.Scanner;
 
 import server.Controllers.GatewayController;
+import server.Controllers.Helper;
 import server.Services.GatewayService;
 
 public class GatewayApplication {
@@ -32,18 +34,27 @@ public class GatewayApplication {
             
         }catch(Exception e) {
             System.out.println("Gateway Controller main " + e.getMessage());
+            e.printStackTrace();
         }
 
 	}
 	
-	public  static void cycle(GatewayController stub) throws IOException {
+	public  static void cycle(GatewayController stub) throws IOException, InterruptedException {
 		int devListenPort = stub.createListeningSocket(0);
 		System.out.println("Listening new devices registration at port " + devListenPort);
 		stub.startListeningDevices();
+		System.out.println("sonic");
 		while(true){
 			//do stuff
-			
-//			stub.devices
+			Thread.sleep(1000);
+			Map<String, Helper> devConnections = stub.devConnections;
+			if(devConnections == null) continue;
+			for ( Map.Entry<String, Helper> e : devConnections.entrySet()){
+				String state = "";
+				if (e.getValue().state != null ) state = e.getValue().state.toString().trim();
+				else state = "Null";
+				System.out.println(e.getKey() + state);
+			}
 			
 		}
 	}
