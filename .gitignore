@@ -236,3 +236,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/java,linux,maven,python,windows,eclipse
+
+ssh-rmi-client/keys/
+ssh-rmi-server/keys/
