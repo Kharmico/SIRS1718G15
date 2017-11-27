@@ -25,7 +25,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	// GatewayController Variables
 	public List<Device> devices = new ArrayList<Device>();
 	private ServerSocket registerSocket;
-	private Map<String, Helper> devConnections = new HashMap<String,Helper>(); 	 //Stores the threads with the connections
+	public Map<String, Helper> devConnections = new HashMap<String,Helper>(); 	 //Stores the threads with the connections
 	private ArrayList<String> nonceList = new ArrayList<String>();
 	private EncryptionUtil encUtil = new EncryptionUtil();
 
@@ -90,9 +90,6 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		Thread t1 = new Thread(new Runnable() {
 			public void run() {
 
-
-
-
 				while (true) { /* or some other condition you wish */
 					Socket connection;
 					try {
@@ -112,6 +109,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 							System.out.println(deviceName);
 						}
 						else {
+							System.out.println("Connection not successful");
 							connection.close();
 							continue;
 						};
@@ -124,7 +122,6 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 
 
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					} 
 				}
