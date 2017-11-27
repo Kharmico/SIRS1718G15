@@ -34,7 +34,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 
 	//GatewayController Endpoints
 	
-	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] nonce, byte[] signature) {
+	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] nonce, byte[] signature, byte[] token) {
 
 		String str_nonce;
 		byte[] dec_nonce = encUtil.decrypt(nonce);
@@ -53,21 +53,21 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		return null;
 	}
 
-	public List<byte[]> DeleteUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] nonce, byte[] signature) {
+	public List<byte[]> DeleteUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] nonce, byte[] signature, byte[] token) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public List<ArrayList<byte[]>> GetDeviceStatus(byte[] nonce, byte[] signature) {
+	public List<ArrayList<byte[]>> GetDeviceStatus(byte[] nonce, byte[] signature, byte[] token) {
 		return null;
 	}
 
-	public List<byte[]> GetDeviceCommands(byte[] deviceName, byte[] nonce, byte[] signature) {
+	public List<byte[]> GetDeviceCommands(byte[] deviceName, byte[] nonce, byte[] signature, byte[] token) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public List<byte[]> SendCommand(byte[] deviceName, byte[] command, byte[] nonce, byte[] signature) {
+	public List<byte[]> SendCommand(byte[] deviceName, byte[] command, byte[] nonce, byte[] signature, byte[] token) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -82,6 +82,11 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		return null;
 	}
 
+	public byte[] GetPublicKey() throws RemoteException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 	public String registerNewDevice(){
 		return null;
 
@@ -160,11 +165,6 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		//LocalDateTime has functions to get the year, month, day, hour, minute, second from it, just need to do a manual diff, no need
 		//to waste time, resources, computation on extra shit...
 		return true;
-	}
-
-	public byte[] GetPublicKey() throws RemoteException {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 }

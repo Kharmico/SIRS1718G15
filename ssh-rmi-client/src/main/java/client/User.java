@@ -37,12 +37,16 @@ public class User {
 	private Date cleanSchedule = new Date();
 	
 	
+	
 	//Program
 	private GatewayService gateway;
+	private byte[] token;
 	
 	//Methods
 	public User(GatewayService stub) throws RemoteException {
 		gateway = stub;
+		token = null;
+		
 		encryption = new EncryptionUtil();
 		//encryption.generateKeys("user");
 		
@@ -50,6 +54,11 @@ public class User {
 	}
 
 	public void RegisterUser(String adminName, String adminPassword, String name, String password) throws RemoteException, UnsupportedEncodingException {
+		if(token == null) {
+			System.out.println("Login before doing an action!");
+			return;
+		}
+		
 		//make nounce
 		String timestamp = DateUtil.getTimestamp();
 		String uuid = this.getUUID();
@@ -77,7 +86,7 @@ public class User {
 		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
 		
 		
-		List<byte[]> response = gateway.RegisterUser(aName, aPassword, nName, nPassword, nounce, signature);
+		List<byte[]> response = gateway.RegisterUser(aName, aPassword, nName, nPassword, nounce, signature, token);
 		
 		//decrypt response
 		String pureResponse = new String(encryption.decrypt(response.get(3)), UTF8);
@@ -90,6 +99,9 @@ public class User {
 				}
 				else if(pureResponse.equals("NOK")) {
 					System.out.println("User could not be registered");
+				}
+				else if(pureResponse.equals("INVALID_TOKEN")) {
+					System.out.println("Your session has ended");
 				}
 				else {
 					System.out.println("Something went wrong!");
@@ -112,6 +124,11 @@ public class User {
 	}
 
 	public void DeleteUser(String adminName, String adminPassword, String name) throws RemoteException, UnsupportedEncodingException {
+		if(token == null) {
+			System.out.println("Login before doing an action!");
+			return;
+		}
+		
 		//make nounce
 		String timestamp = DateUtil.getTimestamp();
 		String uuid = this.getUUID();
@@ -138,7 +155,7 @@ public class User {
 		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
 		
 		
-		List<byte[]> response = gateway.DeleteUser(aName, aPassword, nName, nounce, signature);
+		List<byte[]> response = gateway.DeleteUser(aName, aPassword, nName, nounce, signature, token);
 	
 		//decrypt response
 		String pureResponse = new String(encryption.decrypt(response.get(3)), UTF8);
@@ -151,6 +168,9 @@ public class User {
 				}
 				else if(pureResponse.equals("NOK")) {
 					System.out.println("User could not be deleted");
+				}
+				else if(pureResponse.equals("INVALID_TOKEN")) {
+					System.out.println("Your session has ended");
 				}
 				else {
 					System.out.println("Something went wrong!");
@@ -171,6 +191,11 @@ public class User {
 	}
 
 	public void GetDeviceStatus() throws RemoteException, UnsupportedEncodingException {
+		if(token == null) {
+			System.out.println("Login before doing an action!");
+			return;
+		}
+		
 		//make nounce
 		String timestamp = DateUtil.getTimestamp();
 		String uuid = this.getUUID();
@@ -192,7 +217,7 @@ public class User {
 		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
 		
 		
-		List<ArrayList<byte[]>> response = gateway.GetDeviceStatus(nounce, signature);
+		List<ArrayList<byte[]>> response = gateway.GetDeviceStatus(nounce, signature, token);
 		
 		//decrypt response
 		List<ArrayList<String>> pureResponse = new ArrayList<ArrayList<String>>();
@@ -207,6 +232,11 @@ public class User {
 		
 		try {	
 			if(MaintenanceUtil.checkResponse(response.get(0).get(0), response.get(0).get(1), pureResponse.toString(), cleanSchedule, nounces, encryption)) {
+				if(pureResponse.get(0).equals("INVALID_TOKEN")) {
+					System.out.println("Your session has ended");
+					return;
+				}
+				
 				System.out.println("Device Name\t|\tStatus\t|\tType");
 				if(response != null) {
 					for(int i = 1; i < pureResponse.size(); i++) {
@@ -227,6 +257,11 @@ public class User {
 	}
 
 	public void GetDeviceCommands(String deviceName) throws RemoteException, UnsupportedEncodingException {
+		if(token == null) {
+			System.out.println("Login before doing an action!");
+			return;
+		}
+		
 		//make nounce
 		String timestamp = DateUtil.getTimestamp();
 		String uuid = this.getUUID();
@@ -249,7 +284,7 @@ public class User {
 		
 		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
 		
-		List<byte[]> response = gateway.GetDeviceCommands(dName, nounce, signature);
+		List<byte[]> response = gateway.GetDeviceCommands(dName, nounce, signature, token);
 		
 		//decrypt response		
 		List<String> pureResponse = new ArrayList<String>();
@@ -261,9 +296,14 @@ public class User {
 		
 		try {	
 			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse.toString(), cleanSchedule, nounces, encryption)) {
+				if(pureResponse.get(0).equals("INVALID_TOKEN")) {
+					System.out.println("Your session has ended");
+					return;
+				}
+				
 				System.out.println("Device Commands");
 				for(String command: pureResponse) {
-					System.out.println("-" + command);
+					System.out.println(">> " + command);
 				}
 			}
 			System.out.println("Something went wrong with your request!");
@@ -281,6 +321,11 @@ public class User {
 	}
 
 	public void SendCommand(String deviceName, String command) throws RemoteException, UnsupportedEncodingException {
+		if(token == null) {
+			System.out.println("Login before doing an action!");
+			return;
+		}
+		
 		//make nounce
 		String timestamp = DateUtil.getTimestamp();
 		String uuid = this.getUUID();
@@ -305,7 +350,7 @@ public class User {
 		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
 		
 		
-		List<byte[]> response = gateway.SendCommand(dName, sCommand, nounce, signature);
+		List<byte[]> response = gateway.SendCommand(dName, sCommand, nounce, signature, token);
 		
 		//decrypt response
 		String pureResponse = new String(encryption.decrypt(response.get(3)), UTF8);
@@ -318,6 +363,9 @@ public class User {
 				}
 				else if(pureResponse.equals("NOK")) {
 					System.out.println("Command could not be Executed");
+				}
+				else if(pureResponse.equals("INVALID_TOKEN")) {
+					System.out.println("Your session has ended");
 				}
 				else {
 					System.out.println("Something went wrong!");
@@ -335,6 +383,7 @@ public class User {
 	}
 
 	public void Login(String username, String password, String authString) throws RemoteException, UnsupportedEncodingException {
+		
 		List<byte[]> response = null;
 		
 		
@@ -373,15 +422,13 @@ public class User {
 			
 			try {	
 				if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption)) {
-					if(pureResponse.equals("OK")) {
-						System.out.println("Command Succesfully Executed");
-					}
-					else if(pureResponse.equals("NOK")) {
-						System.out.println("Command could not be Executed");
-					}
-					else {
-						System.out.println("Something went wrong!");
-					}
+					System.out.println("Succesfully Authenticated");
+					token = response.get(3);
+					return;
+				}
+				else if(pureResponse.equals("NOK")) {
+					System.out.println("Wrong Username or Password!");
+					return;
 				}
 				
 				System.out.println("Something went wrong with your request!");
@@ -407,15 +454,14 @@ public class User {
 
 			try {	
 				if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption)) {
-					if(pureResponse.equals("OK")) {
-						System.out.println("Command Succesfully Executed");
-					}
-					else if(pureResponse.equals("NOK")) {
-						System.out.println("Command could not be Executed");
-					}
-					else {
-						System.out.println("Something went wrong!");
-					}
+					System.out.println("Succesfully Authenticated");
+					token = response.get(3);
+					return;
+				}
+				else if(pureResponse.equals("NOK")) {
+					System.out.println("Wrong Username or Password!");
+					return;
+					
 				}
 				
 				System.out.println("Something went wrong with your request!");
@@ -467,13 +513,23 @@ public class User {
 						break;
 	
 					case "commands":
-						g.GetDeviceCommands(parsedInput[1]);
+						if(parsedInput.length == 2) {
+							g.GetDeviceCommands(parsedInput[1]);
+						}
+						else {
+							System.out.println("Unrecognized login command");
+						}
 						break;
 	
-					case "request":					
-						String command = String.join(" ", Arrays.copyOfRange(parsedInput, 3, parsedInput.length));
-						
-						g.SendCommand(parsedInput[1], command);
+					case "request":	
+						if(parsedInput.length > 3) {				
+							String command = String.join(" ", Arrays.copyOfRange(parsedInput, 3, parsedInput.length));
+							
+							g.SendCommand(parsedInput[1], command);
+						}
+						else {
+							System.out.println("Unrecognized login command");
+						}
 						break;
 	
 					case "login":
