@@ -27,7 +27,6 @@ public class User {
 	//Static
 	private static String UTF8 = "UTF-8";
 	
-	
 	//Encryption
 	private EncryptionUtil svEncryption;
 	private EncryptionUtil encryption;
