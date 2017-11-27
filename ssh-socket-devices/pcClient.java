@@ -11,7 +11,11 @@ public class pcClient {
         PrintStream out = null;
 
         try {
-            rpiSocket = new Socket("localhost",5560); 
+			if(args.length == 0)
+				rpiSocket = new Socket("localhost",5560); 
+			else if (args.length == 1)
+				rpiSocket = new Socket("localhost",Integer.parseInt(args[0])); 
+			
             out = new PrintStream(rpiSocket.getOutputStream());
             in = new DataInputStream(new BufferedInputStream(rpiSocket.getInputStream()));
         } catch (UnknownHostException e) {

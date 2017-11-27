@@ -11,7 +11,8 @@ import server.Controllers.Helper;
 import server.Services.GatewayService;
 
 public class GatewayApplication {
-
+	public static final int SERVERPORT = 8080;
+	
 	public static void main(String[] args){
 		String name = args[0];
 		int registryPort = Integer.parseInt(args[1]);
@@ -40,7 +41,7 @@ public class GatewayApplication {
 	}
 	
 	public  static void cycle(GatewayController stub) throws IOException, InterruptedException {
-		int devListenPort = stub.createListeningSocket(0);
+		int devListenPort = stub.createListeningSocket(SERVERPORT);
 		System.out.println("Listening new devices registration at port " + devListenPort);
 		stub.startListeningDevices();
 		System.out.println("sonic");
@@ -51,9 +52,9 @@ public class GatewayApplication {
 			if(devConnections == null) continue;
 			for ( Map.Entry<String, Helper> e : devConnections.entrySet()){
 				String state = "";
-				if (e.getValue().state != null ) state = e.getValue().state.toString().trim();
+				if (e.getValue().getDeviceState() != null ) state = e.getValue().getDeviceState().toString();
 				else state = "Null";
-				System.out.println(e.getKey() + state);
+				System.out.println(e.getKey() +":"+ state);
 			}
 			
 		}
