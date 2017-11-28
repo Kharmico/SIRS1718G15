@@ -48,7 +48,6 @@ public class User {
 		token = null;
 		
 		encryption = new EncryptionUtil();
-		//encryption.generateKeys("user");
 		
 		//svEncryption.setPublicKey(svEncryption.byteArrayToPubKey(svEncryption.base64Decoder(stub.GetPublicKey())), "Gateway");
 	}
@@ -446,6 +445,8 @@ public class User {
 		else {
 			//Replenish Login
 			byte[] auth = svEncryption.encrypt(authString.getBytes(UTF8));
+
+			encryption.generateKeys("user");
 			
 			response = gateway.ReplenishLogin(encryption.pubKeyToByteArray(), name, pass, auth, nounce, signature);
 			
