@@ -1,5 +1,7 @@
 import socket               # Import socket module
 import _thread
+import os
+import base64
 from sys import getsizeof
 from random import randint
 
@@ -11,6 +13,18 @@ GateWaySocket = ''
 state = ["OFF", "REFRIGERATING", "COOLING_DOWN"]
 curState = 0
 myName = "Refrigerator " + str(randint(0,10))
+
+factoryKey = ''
+base64FactoryKey = ''
+
+def generateFactoryKey():
+     key = os.urandom(16)			#128 bits
+     encodedkey = base64.b64encode(key)
+     print("secret key:" + str(key) + "\nbase64 secret key:" + str(encodedkey))
+     decodedkey = base64.b64decode(encodedkey)
+     print("decoded base64 secret key:" + str(decodedkey))
+     return key, encodedkey 
+
 
 def setupServer():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -42,6 +56,22 @@ def switchState():
     curState = curState + 1 % len(state)
     reply = "The "+ myName +" state has been switched!"
     return reply
+
+def encryption(privateInfo): 
+	BLOCK_SIZE = 16 
+	PADDING ='{' 
+	
+	pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * PADDING 
+	
+	EncodeAES = lambda c, s: base64.b64encode (c.encrypt (pad(s))) 
+	
+	secret = os.urandom(BLOCK_SIZE) 
+	print ('encryption key:'), secret
+	
+	cipher = AES.new(secret) 
+	
+	encoded = EncodeAES(cipher, privateInfo) 
+	print ('Encrypted string:'), encoded
     
 def dataTransfer(conn, s):
     # A big loop that sends/receives data until told not to.
@@ -140,6 +170,7 @@ s = setupServer()
 
 while True:
     try:
+        factoryKey, base64FactoryKey = generateFactoryKey()
         conn = setupConnection()
         dataTransfer(conn, s)
     except Exception as inst:
