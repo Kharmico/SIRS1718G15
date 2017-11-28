@@ -47,6 +47,11 @@ public class EncryptionUtil {
         this.privateKeyPath = privateKeyPath;
     }
 
+    public void setKeyPaths(String publicKeyPath, String privateKeyPath){
+        this.publicKeyPath = publicKeyPath;
+        this.privateKeyPath = privateKeyPath;
+    }
+    
     public PrivateKey getPrivateKey() {
 
         PrivateKey privateKey = null;
