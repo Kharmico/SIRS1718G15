@@ -4,13 +4,13 @@ from sys import getsizeof
 from random import randint
 
 host = ''
-port = 5560
+port = 0
 
 GateWaySocket = ''
 
-turnedON = True
-storedValue = str(turnedON)
-myName = "Lamp" + str(randint(0,10))
+state = ["OFF", "REFRIGERATING", "COOLING_DOWN"]
+curState = 0
+myName = "Refrigerator " + str(randint(0,10))
 
 def setupServer():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -20,7 +20,7 @@ def setupServer():
         s.bind((host, port))
     except socket.error as msg:
         print(msg)
-    print("Socket bind comPlete.")
+    print("Socket bind comPlete. Host:" + s.getsockname()[0]+ ";Port:"+str(s.getsockname()[1]))
     return s
 
 def setupConnection():
@@ -30,17 +30,17 @@ def setupConnection():
     return conn
 
 def GETSTATUS():
-    reply = ("ON" if turnedON else "OFF")
+    reply = state[curState]
     return reply
 
 def REPEAT(dataMessage):
     reply = dataMessage[1]
     return reply
 
-def switchLamp():
-    global turnedON 
-    turnedON = not turnedON
-    reply = "The lamp has been switched " + ("ON" if turnedON else "OFF")
+def switchState():
+    global curState 
+    curState = curState + 1 % len(state)
+    reply = "The "+ myName +" state has been switched!"
     return reply
     
 def dataTransfer(conn, s):
@@ -63,7 +63,7 @@ def dataTransfer(conn, s):
         elif command == 'REPEAT':
             reply = REPEAT(data)
         elif command == 'SWITCH':
-            reply = switchLamp()
+            reply = switchState()
         elif command == 'EXIT':
             print("Our client has left us :(")
             break
@@ -114,7 +114,7 @@ def serveGateway(conn):
         elif command == 'REPEAT':
             reply = REPEAT(data)
         elif command == 'SWITCH':
-            reply = switchLamp()
+            reply = switchState()
         elif command == 'EXIT':
             print("Our Gateway has left us :(")
             break

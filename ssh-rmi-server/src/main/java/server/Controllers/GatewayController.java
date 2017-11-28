@@ -26,7 +26,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	// GatewayController Variables
 	public List<Device> devices = new ArrayList<Device>();
 	private ServerSocket registerSocket;
-	private Map<String, Helper> devConnections = new HashMap<String,Helper>(); 	 //Stores the threads with the connections
+	public Map<String, Helper> devConnections = new HashMap<String,Helper>(); 	 //Stores the threads with the connections
 	private ArrayList<String> nonceList = new ArrayList<String>();
 	private EncryptionUtil encUtil = new EncryptionUtil();
 
@@ -35,7 +35,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 
 	//GatewayController Endpoints
 	
-	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] nonce, byte[] signature) {
+	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] nonce, byte[] signature, byte[] token) {
 
 		String str_nonce;
 		byte[] dec_nonce = encUtil.decrypt(nonce);
@@ -54,21 +54,21 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		return null;
 	}
 
-	public List<byte[]> DeleteUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] nonce, byte[] signature) {
+	public List<byte[]> DeleteUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] nonce, byte[] signature, byte[] token) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public List<ArrayList<byte[]>> GetDeviceStatus(byte[] nonce, byte[] signature) {
+	public List<ArrayList<byte[]>> GetDeviceStatus(byte[] nonce, byte[] signature, byte[] token) {
 		return null;
 	}
 
-	public List<byte[]> GetDeviceCommands(byte[] deviceName, byte[] nonce, byte[] signature) {
+	public List<byte[]> GetDeviceCommands(byte[] deviceName, byte[] nonce, byte[] signature, byte[] token) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public List<byte[]> SendCommand(byte[] deviceName, byte[] command, byte[] nonce, byte[] signature) {
+	public List<byte[]> SendCommand(byte[] deviceName, byte[] command, byte[] nonce, byte[] signature, byte[] token) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -83,6 +83,11 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		return null;
 	}
 
+	public byte[] GetPublicKey() throws RemoteException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 	public String registerNewDevice(){
 		return null;
 
@@ -90,9 +95,6 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	public void startListeningDevices() throws IOException {
 		Thread t1 = new Thread(new Runnable() {
 			public void run() {
-
-
-
 
 				while (true) { /* or some other condition you wish */
 					Socket connection;
@@ -113,6 +115,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 							System.out.println(deviceName);
 						}
 						else {
+							System.out.println("Connection not successful");
 							connection.close();
 							continue;
 						};
@@ -125,7 +128,6 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 
 
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					} 
 				}
