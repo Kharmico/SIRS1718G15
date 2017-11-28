@@ -31,7 +31,9 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	private EncryptionUtil encUtil = new EncryptionUtil();
 
 	// GatewayController Constructor
-	public GatewayController() throws RemoteException {}
+	public GatewayController() throws RemoteException {
+		encUtil.generateKeys("gateway");
+	}
 
 	//GatewayController Endpoints
 	
@@ -43,9 +45,10 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			// nonce%timestamp
 			str_nonce = new String(dec_nonce, "UTF-8");
 			String[] strings_nonce = str_nonce.split("%");
-			if(nonceList.contains(str_nonce) || checkTimestamp(strings_nonce[1])){
-				System.out.println("NONCE ALREADY SEEN!!!");
-			}
+			// TODO: Use Utils function for checking this crap!
+//			if(nonceList.contains(str_nonce) || checkTimestamp(strings_nonce[1])){
+//				System.out.println("NONCE ALREADY SEEN!!!");
+//			}
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -84,8 +87,9 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	}
 
 	public byte[] GetPublicKey() throws RemoteException {
-		// TODO Auto-generated method stub
-		return null;
+		byte[] pubKeyGetter = encUtil.pubKeyToByteArray();
+		
+		return encUtil.base64Encoder(pubKeyGetter);
 	}
 	
 	public String registerNewDevice(){
@@ -150,26 +154,4 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		registerSocket.close();
 	}
 	
-	// (yyyy/mm/dd hh:mm:ss)
-	private boolean checkTimestamp(String timest){
-		LocalDateTime currentTime;
-		LocalDateTime rcvdTime;
-		int[] timestCalendar = new int[3];
-		int[] timestHours = new int[3];
-		String[] divide = timest.split("[ /:]");
-
-		for(int i = 0; i < 3; i++){
-			timestCalendar[i] = Integer.parseInt(divide[i]);
-			timestHours[i] = Integer.parseInt(divide[i+3]);
-		}
-		
-		currentTime = LocalDateTime.now();
-		rcvdTime = LocalDateTime.of(timestCalendar[0], timestCalendar[1], timestCalendar[2], timestHours[0], timestHours[1], timestHours[2]);
-		Duration stuff = Duration.between(currentTime, rcvdTime);
-		System.out.println("Duration between current and received: " + stuff);
-		//LocalDateTime has functions to get the year, month, day, hour, minute, second from it, just need to do a manual diff, no need
-		//to waste time, resources, computation on extra shit...
-		return true;
-	}
-
 }
