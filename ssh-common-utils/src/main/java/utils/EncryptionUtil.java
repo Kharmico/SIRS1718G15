@@ -104,7 +104,7 @@ public class EncryptionUtil {
 			fileKeyOutputStream.writeObject(key);
 			fileKeyOutputStream.close();
             
-            publicKeyPath = fileKey.getPath();
+            privateKeyPath = fileKey.getPath();
 			
     	} catch (IOException e) {
 			// TODO Auto-generated catch block
