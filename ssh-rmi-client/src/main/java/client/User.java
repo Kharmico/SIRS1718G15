@@ -429,6 +429,7 @@ public class User {
 			try {	
 				if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption)) {
 					System.out.println("Succesfully Authenticated");
+					encryption.setKeyPaths("keys/"+username+"UserPublicKey.key", "keys/"+username+"UserPrivateKey.key");
 					token = response.get(3);
 					return;
 				}
