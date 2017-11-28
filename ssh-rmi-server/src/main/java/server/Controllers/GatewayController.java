@@ -7,6 +7,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -150,16 +151,20 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	// (yyyy/mm/dd hh:mm:ss)
 	private boolean checkTimestamp(String timest){
 		LocalDateTime currentTime;
-		String[] divide = timest.split("[ /:]");
+		LocalDateTime rcvdTime;
 		int[] timestCalendar = new int[3];
 		int[] timestHours = new int[3];
-		
+		String[] divide = timest.split("[ /:]");
+
 		for(int i = 0; i < 3; i++){
 			timestCalendar[i] = Integer.parseInt(divide[i]);
 			timestHours[i] = Integer.parseInt(divide[i+3]);
 		}
 		
 		currentTime = LocalDateTime.now();
+		rcvdTime = LocalDateTime.of(timestCalendar[0], timestCalendar[1], timestCalendar[2], timestHours[0], timestHours[1], timestHours[2]);
+		Duration stuff = Duration.between(currentTime, rcvdTime);
+		System.out.println("Duration between current and received: " + stuff);
 		//LocalDateTime has functions to get the year, month, day, hour, minute, second from it, just need to do a manual diff, no need
 		//to waste time, resources, computation on extra shit...
 		return true;
