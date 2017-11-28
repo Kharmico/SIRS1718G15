@@ -48,8 +48,15 @@ public class User {
 		token = null;
 		
 		encryption = new EncryptionUtil();
+		svEncryption = new EncryptionUtil();
+
+		byte[] response = stub.GetPublicKey();
+		byte[] decoded = svEncryption.base64Decoder(response);
+		Key pureResponse =svEncryption.byteArrayToPubKey(decoded);
 		
-		svEncryption.setPublicKey(svEncryption.byteArrayToPubKey(svEncryption.base64Decoder(stub.GetPublicKey())), "Gateway");
+		svEncryption.setPublicKey(pureResponse, "gateway");
+		
+		System.out.println("You can now communicate with the Server [Help for commands]");
 	}
 
 	public void RegisterUser(String adminName, String adminPassword, String name, String password) throws RemoteException, UnsupportedEncodingException {
@@ -446,9 +453,9 @@ public class User {
 			//Replenish Login
 			byte[] auth = svEncryption.encrypt(authString.getBytes(UTF8));
 
-			encryption.generateKeys("user");
+			encryption.generateKeys(username + "User");
 			
-			response = gateway.ReplenishLogin(encryption.pubKeyToByteArray(), name, pass, auth, nounce, signature);
+			response = gateway.ReplenishLogin(encryption.base64Encoder(encryption.pubKeyToByteArray()), name, pass, auth, nounce, signature);
 			
 			//decrypt response
 			String pureResponse = new String(response.get(3), UTF8);
