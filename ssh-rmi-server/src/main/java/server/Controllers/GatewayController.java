@@ -7,6 +7,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.SignatureException;
 import java.text.ParseException;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -15,6 +16,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
@@ -28,6 +30,7 @@ import server.entities.User;
 public class GatewayController extends UnicastRemoteObject implements GatewayService {
 
 	private static final long serialVersionUID = 1L;
+	private static final String UTF8 = "UTF-8";
 	// GatewayController Variables
 	public List<Device> devices = new ArrayList<Device>();
 	public Map<String, Helper> devConnections = new HashMap<String,Helper>(); 	 //Stores the threads with the connections
@@ -39,7 +42,8 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	// GatewayController Constructor
 	public GatewayController() throws RemoteException {
 		encUtil.generateKeys("gateway");
-//		user = new User("admin", "ADMIN", "admin", );
+		user = new User("admin", "ADMIN", "admin");
+		user.getEncUtils().setKeyPaths("keys/adminUserPublicKey.key", "");
 	}
 
 	//GatewayController Endpoints
@@ -47,37 +51,6 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	
 	// Hash -> Username+Type(type of user, i.e. admin, regular user, etc.)+LastLoginDate+LastLoginUUID H{U+T+D+I}
 	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] nonce, byte[] signature, byte[] token) {
-
-		String str_nonce;
-		byte[] dec_nonce = encUtil.decrypt(nonce);
-		try {
-			// nonce%timestamp
-			str_nonce = new String(dec_nonce, "UTF-8");
-			String[] strings_nonce = str_nonce.split("%");
-			Date nonceDate = DateUtil.convertDate(strings_nonce[1]);
-			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2)) {
-				
-				// create nonce+timestamp, concatenate with % in the middle
-				// choose which type of response to send!!! (check on User from user-side for types)
-				// sign everything!!!
-				
-				
-				
-				
-				
-				System.out.println("CENAS MÁS!!!");
-			}
-			
-			
-			// TODO: Use Utils function for checking this crap!
-//			if(nonceList.contains(str_nonce) || checkTimestamp(strings_nonce[1])){
-//				System.out.println("NONCE ALREADY SEEN!!!");
-//			}
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (ParseException e) {
-			e.printStackTrace();
-		}
 		
 		return null;
 	}
@@ -106,13 +79,48 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		return null;
 	}
 
-	public List<byte[]> Login(byte[] username, byte[] password, byte[] nonce, byte[] signature) {
+	public List<byte[]> Login(byte[] username, byte[] password, byte[] nounce, byte[] signature) {
 		
+		String str_nonce;
+		byte[] dec_nonce = encUtil.decrypt(nounce);
+		try {
+			// nonce%timestamp
+			str_nonce = new String(dec_nonce, "UTF-8");
+			String[] strings_nonce = str_nonce.split("%");
+			Date nonceDate = DateUtil.convertDate(strings_nonce[1]);
+			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2)) {
+				// create nonce+timestamp, concatenate with % in the middle
+				// choose which type of response to send!!! (check on User from user-side for types)
+				// sign everything!!!
+				String response = "NOFRESH";
+				String timestamp = DateUtil.getTimestamp();
+				String uuid = UUID.randomUUID().toString();
+				String pureNounce = uuid + "%" + timestamp;
+				String pureSignature = response.concat(pureNounce);
+				
+				byte[] sigToSend = null;
+				sigToSend = encUtil.generateSignature(pureSignature.getBytes(UTF8));
+
+				byte[] nounceToSend = encUtil.encrypt(pureNounce.getBytes(UTF8));
+				byte[] responseToSend = encUtil.encrypt(response.getBytes(UTF8));
+				
+				List<byte[]> answerRequest = new ArrayList<byte[]>();
+				answerRequest.add(nounceToSend);
+				answerRequest.add(sigToSend);
+				answerRequest.add(responseToSend);
+				
+				System.out.println("WRONG LOGIN ATTEMPT: FRESHNESS ISSUES!!!");
+				return answerRequest;
+			}
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			System.out.println("[ERROR] Couldn't generate signature");
+			e.printStackTrace();
+		}
 		
-		
-		
-		
-		// TODO Auto-generated method stub
 		return null;
 	}
 

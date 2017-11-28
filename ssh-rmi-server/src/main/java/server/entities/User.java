@@ -15,6 +15,13 @@ public class User {
 	private String loginUuid;
 	private Date loginDate;
 	
+	public User(String username, String password, String type){
+		this.username = username;
+		this.password = password;
+		this.type = type;
+		this.encUtils = new EncryptionUtil();
+	}
+	
 	public User(String username, String password, String type, Key pubKey){
 		this.username = username;
 		this.password = password;
