@@ -7,6 +7,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +31,9 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	private EncryptionUtil encUtil = new EncryptionUtil();
 
 	// GatewayController Constructor
-	public GatewayController() throws RemoteException {}
+	public GatewayController() throws RemoteException {
+		encUtil.generateKeys("gateway");
+	}
 
 	//GatewayController Endpoints
 	
@@ -42,9 +45,10 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			// nonce%timestamp
 			str_nonce = new String(dec_nonce, "UTF-8");
 			String[] strings_nonce = str_nonce.split("%");
-			if(nonceList.contains(str_nonce) || checkTimestamp(strings_nonce[1])){
-				System.out.println("NONCE ALREADY SEEN!!!");
-			}
+			// TODO: Use Utils function for checking this crap!
+//			if(nonceList.contains(str_nonce) || checkTimestamp(strings_nonce[1])){
+//				System.out.println("NONCE ALREADY SEEN!!!");
+//			}
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -83,8 +87,9 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	}
 
 	public byte[] GetPublicKey() throws RemoteException {
-		// TODO Auto-generated method stub
-		return null;
+		byte[] pubKeyGetter = encUtil.pubKeyToByteArray();
+		
+		return encUtil.base64Encoder(pubKeyGetter);
 	}
 	
 	public String registerNewDevice(){
@@ -149,22 +154,4 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		registerSocket.close();
 	}
 	
-	// (yyyy/mm/dd hh:mm:ss)
-	private boolean checkTimestamp(String timest){
-		LocalDateTime currentTime;
-		String[] divide = timest.split("[ /:]");
-		int[] timestCalendar = new int[3];
-		int[] timestHours = new int[3];
-		
-		for(int i = 0; i < 3; i++){
-			timestCalendar[i] = Integer.parseInt(divide[i]);
-			timestHours[i] = Integer.parseInt(divide[i+3]);
-		}
-		
-		currentTime = LocalDateTime.now();
-		//LocalDateTime has functions to get the year, month, day, hour, minute, second from it, just need to do a manual diff, no need
-		//to waste time, resources, computation on extra shit...
-		return true;
-	}
-
 }
