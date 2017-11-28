@@ -49,7 +49,7 @@ public class User {
 		
 		encryption = new EncryptionUtil();
 		
-		//svEncryption.setPublicKey(svEncryption.byteArrayToPubKey(svEncryption.base64Decoder(stub.GetPublicKey())), "Gateway");
+		svEncryption.setPublicKey(svEncryption.byteArrayToPubKey(svEncryption.base64Decoder(stub.GetPublicKey())), "Gateway");
 	}
 
 	public void RegisterUser(String adminName, String adminPassword, String name, String password) throws RemoteException, UnsupportedEncodingException {
