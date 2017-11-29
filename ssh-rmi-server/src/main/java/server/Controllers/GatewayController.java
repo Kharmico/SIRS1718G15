@@ -36,7 +36,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	private ServerSocket registerSocket;
 	private ArrayList<String> nonceList = new ArrayList<String>();
 	private EncryptionUtil encUtil = new EncryptionUtil();
-	private User user;
+	private User user, reg_user;
 
 	// GatewayController Constructor
 	public GatewayController() throws RemoteException {
@@ -47,39 +47,316 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 
 	//GatewayController Endpoints
 	
-	
 	// Hash -> Username+Type(type of user, i.e. admin, regular user, etc.)+LastLoginDate+LastLoginUUID H{U+T+D+I}
 	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] nonce, byte[] signature, byte[] token) {
+		byte[] dec_nonce = encUtil.decrypt(nonce);
+		try {
+			// nonce%timestamp
+			String pure_nonce = new String(dec_nonce, UTF8);
+			String[] strings_nonce = pure_nonce.split("%");
+			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
+			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
+				System.out.println("WRONG REGISTER ATTEMPT: FRESHNESS ISSUES!!!");
+				return answerRequest("NOFRESH");
+			}
+
+			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			String usernameToCheck = new String(encUtil.decrypt(name), UTF8);
+			String passwordToCheck = new String(encUtil.decrypt(password), UTF8);
+			String adminUserToCheck = new String(encUtil.decrypt(adminUsername), UTF8);
+			String adminPassToCheck = new String(encUtil.decrypt(adminPassword), UTF8);
+			String dataToCheck = adminUserToCheck + adminPassToCheck + usernameToCheck + passwordToCheck + pure_nonce;
+			
+			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
+				System.out.println("WRONG REGISTER ATTEMPT: SIGNATURE VERIFICATION!!!");
+				return answerRequest("WRONGSIG");
+			}
+			
+			String tokenToCheck = new String(encUtil.decrypt(token), UTF8);
+			if(tokenToCheck.equals(user.lastToken())) {
+				System.out.println("WRONG REGISTER ATTEMPT: INVALID TOKEN!!!");
+				return answerRequest("INVALID_TOKEN");
+			}
+			
+			// TODO: Should check if User already exists
+			System.out.println("BEFORE ADMIN CREDENTIALS CHECKING!!!\n" + usernameToCheck + " " + passwordToCheck + " " + user.getUsername() + " " + user.getPassword());
+			if(!(adminUserToCheck.equals(user.getUsername()) && adminPassToCheck.equals(user.getPassword()))) {
+				System.out.println("WRONG LOGIN ATTEMPT: LOGIN CRAP VERIFICATION!!!");
+				return answerRequest("NOK");
+			}
+			
+			nonceList.add(pure_nonce);
+			reg_user = new User(usernameToCheck, passwordToCheck, "REGULAR");
+			return answerRequest("OK");
+			
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			System.out.println("[ERROR] Couldn't generate signature");
+			e.printStackTrace();
+		}
 		
 		return null;
 	}
 
 	public List<byte[]> DeleteUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] nonce, byte[] signature, byte[] token) {
-		// TODO Auto-generated method stub
+		byte[] dec_nonce = encUtil.decrypt(nonce);
+		try {
+			// nonce%timestamp
+			String pure_nonce = new String(dec_nonce, UTF8);
+			String[] strings_nonce = pure_nonce.split("%");
+			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
+			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
+				System.out.println("WRONG REGISTER ATTEMPT: FRESHNESS ISSUES!!!");
+				return answerRequest("NOFRESH");
+			}
+
+			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			String usernameToCheck = new String(encUtil.decrypt(name), UTF8);
+			String adminUserToCheck = new String(encUtil.decrypt(adminUsername), UTF8);
+			String adminPassToCheck = new String(encUtil.decrypt(adminPassword), UTF8);
+			String dataToCheck = adminUserToCheck + adminPassToCheck + usernameToCheck + pure_nonce;
+			
+			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
+				System.out.println("WRONG REGISTER ATTEMPT: SIGNATURE VERIFICATION!!!");
+				return answerRequest("WRONGSIG");
+			}
+			
+			String tokenToCheck = new String(encUtil.decrypt(token), UTF8);
+			if(tokenToCheck.equals(user.lastToken())) {
+				System.out.println("WRONG REGISTER ATTEMPT: INVALID TOKEN!!!");
+				return answerRequest("INVALID_TOKEN");
+			}
+			
+			if(!reg_user.getUsername().equals(usernameToCheck)) {
+				System.out.println("WRONG DELETE ATTEMPT: USER DOES NOT EXIST!!!");
+				return answerRequest("DELETE_ERROR");
+			}
+			
+			nonceList.add(pure_nonce);
+			reg_user = null;
+			return answerRequest("OK");
+			
+			
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			System.out.println("[ERROR] Couldn't generate signature");
+			e.printStackTrace();
+		}
+		
 		return null;
 	}
 
 	public List<ArrayList<byte[]>> GetDeviceStatus(byte[] nonce, byte[] signature, byte[] token) {
+		//TODO: Check this function to really implement it correctly!!!
+		List<ArrayList<byte[]>> answerToRet = new ArrayList<ArrayList<byte[]>>();
+		byte[] dec_nonce = encUtil.decrypt(nonce);
+		try {
+			// nonce%timestamp
+			String pure_nonce = new String(dec_nonce, UTF8);
+			String[] strings_nonce = pure_nonce.split("%");
+			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
+			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
+				System.out.println("WRONG REGISTER ATTEMPT: FRESHNESS ISSUES!!!");
+				answerToRet.add((ArrayList) answerRequest("NOFRESH"));
+				return answerToRet;
+			}
+
+			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			String dataToCheck = pure_nonce;
+			
+			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
+				System.out.println("WRONG REGISTER ATTEMPT: SIGNATURE VERIFICATION!!!");
+				answerToRet.add((ArrayList) answerRequest("WRONGSIG"));
+				return answerToRet;
+			}
+			
+			String tokenToCheck = new String(encUtil.decrypt(token), UTF8);
+			if(tokenToCheck.equals(user.lastToken())) {
+				System.out.println("WRONG REGISTER ATTEMPT: INVALID TOKEN!!!");
+				answerToRet.add((ArrayList) answerRequest("INVALID_TOKEN"));
+				return answerToRet;
+			}
+
+			nonceList.add(pure_nonce);
+			return null;
+			
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			System.out.println("[ERROR] Couldn't generate signature");
+			e.printStackTrace();
+		}
+		
 		return null;
 	}
 
 	public List<byte[]> GetDeviceCommands(byte[] deviceName, byte[] nonce, byte[] signature, byte[] token) {
-		// TODO Auto-generated method stub
+		byte[] dec_nonce = encUtil.decrypt(nonce);
+		try {
+			// nonce%timestamp
+			String pure_nonce = new String(dec_nonce, UTF8);
+			String[] strings_nonce = pure_nonce.split("%");
+			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
+			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
+				System.out.println("WRONG REGISTER ATTEMPT: FRESHNESS ISSUES!!!");
+				return answerRequest("NOFRESH");
+			}
+
+			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			String deviceToCheck = new String(encUtil.decrypt(deviceName), UTF8);
+			String dataToCheck = deviceToCheck + pure_nonce;
+			
+			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
+				System.out.println("WRONG REGISTER ATTEMPT: SIGNATURE VERIFICATION!!!");
+				return answerRequest("WRONGSIG");
+			}
+			
+			String tokenToCheck = new String(encUtil.decrypt(token), UTF8);
+			if(tokenToCheck.equals(user.lastToken())) {
+				System.out.println("WRONG REGISTER ATTEMPT: INVALID TOKEN!!!");
+				return answerRequest("INVALID_TOKEN");
+			}
+			
+			if(!devConnections.containsKey(deviceToCheck)) {
+				System.out.println("WRONG GETDEVICECOMMANDS: DEVICE DOES NOT EXIST");
+				return answerRequest("DEVICE_ERROR");
+			}
+			
+			//TODO: Get this done right!!!
+			nonceList.add(pure_nonce);
+			devices.get(0).getCommands();
+			return answerRequest("Commands");
+			
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			System.out.println("[ERROR] Couldn't generate signature");
+			e.printStackTrace();
+		}
+		
 		return null;
 	}
 
 	public List<byte[]> SendCommand(byte[] deviceName, byte[] command, byte[] nonce, byte[] signature, byte[] token) {
-		// TODO Auto-generated method stub
+		byte[] dec_nonce = encUtil.decrypt(nonce);
+		try {
+			// nonce%timestamp
+			String pure_nonce = new String(dec_nonce, UTF8);
+			String[] strings_nonce = pure_nonce.split("%");
+			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
+			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
+				System.out.println("WRONG REGISTER ATTEMPT: FRESHNESS ISSUES!!!");
+				return answerRequest("NOFRESH");
+			}
+
+			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			String deviceToCheck = new String(encUtil.decrypt(deviceName), UTF8);
+			String commandToCheck = new String(encUtil.decrypt(command), UTF8);
+			String dataToCheck = deviceToCheck + commandToCheck + pure_nonce;
+			
+			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
+				System.out.println("WRONG REGISTER ATTEMPT: SIGNATURE VERIFICATION!!!");
+				return answerRequest("WRONGSIG");
+			}
+			
+			String tokenToCheck = new String(encUtil.decrypt(token), UTF8);
+			if(tokenToCheck.equals(user.lastToken())) {
+				System.out.println("WRONG REGISTER ATTEMPT: INVALID TOKEN!!!");
+				return answerRequest("INVALID_TOKEN");
+			}
+			
+			if(!devConnections.containsKey(deviceToCheck)) {
+				System.out.println("WRONG GETDEVICECOMMANDS: DEVICE DOES NOT EXIST");
+				return answerRequest("DEVICE_ERROR");
+			}
+			
+			//TODO: Get this done right!!!
+			nonceList.add(pure_nonce);
+			Helper deviceCon = devConnections.get(deviceToCheck);
+			deviceCon.getDeviceState();
+			return answerRequest("Command_Sent");
+			
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			System.out.println("[ERROR] Couldn't generate signature");
+			e.printStackTrace();
+		}
+		
 		return null;
 	}
 
 	public List<byte[]> ReplenishLogin(byte[] userPublicKey, byte[] username, byte[] password, byte[] authString, byte[] nonce, byte[] signature) {
-		// TODO Auto-generated method stub
+		byte[] dec_nonce = encUtil.decrypt(nonce);
+		try {
+			// nonce%timestamp
+			String pure_nonce = new String(dec_nonce, UTF8);
+			String[] strings_nonce = pure_nonce.split("%");
+			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
+			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
+				System.out.println("WRONG REFRESH ATTEMPT: FRESHNESS ISSUES!!!");
+				return answerRequest("NOFRESH");
+			}
+
+			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			String usernameToCheck = new String(encUtil.decrypt(username), UTF8);
+			String passwordToCheck = new String(encUtil.decrypt(password), UTF8);
+			String authStringToCheck = new String(encUtil.decrypt(authString), UTF8);
+			String dataToCheck = usernameToCheck + passwordToCheck + authStringToCheck + pure_nonce;
+			
+			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
+				System.out.println("WRONG REFRESH ATTEMPT: SIGNATURE VERIFICATION!!!");
+				return answerRequest("WRONGSIG");
+			}
+			
+			System.out.println("BEFORE LOGIN CREDENTIALS CHECKING!!!\n" + usernameToCheck + " " + passwordToCheck + " " + user.getUsername() + " " + user.getPassword());
+			if(!(usernameToCheck.equals(user.getUsername()) && passwordToCheck.equals(user.getPassword()))) {
+				System.out.println("WRONG REFRESH ATTEMPT: LOGIN CRAP VERIFICATION!!!");
+				return answerRequest("NOK");
+			}
+			
+			//TODO: Be sure this is right!
+			nonceList.add(pure_nonce);
+			String token = user.generateToken();
+			return answerRequest("OK", token);
+			
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			System.out.println("[ERROR] Couldn't generate signature");
+			e.printStackTrace();
+		}
+		
 		return null;
 	}
 
 	public List<byte[]> Login(byte[] username, byte[] password, byte[] nounce, byte[] signature) {
-		String str_nonce;
 		byte[] dec_nonce = encUtil.decrypt(nounce);
 		try {
 			// nonce%timestamp
@@ -87,12 +364,12 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			String[] strings_nonce = pure_nonce.split("%");
 			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
 			System.out.println("BEFORE FRESHNESS CHECKING!!!");
-			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2)) {
+			System.out.println(nonceList);
+			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
 				System.out.println("WRONG LOGIN ATTEMPT: FRESHNESS ISSUES!!!");
 				return answerRequest("NOFRESH");
 			}
-			//TODO: Verify signature, if it passes then verify login info!!! If all good, then...
-			//LOGGED IN!!! Must create a token!!!
+
 			System.out.println("BEFORE DECRYPTING SHIT!!!");
 			String usernameToCheck = new String(encUtil.decrypt(username), UTF8);
 			String passwordToCheck = new String(encUtil.decrypt(password), UTF8);
@@ -110,8 +387,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				return answerRequest("NOK");
 			}
 
-			System.out.println("I GOT HERE!!! WOOHOO!!!");
-			
+			nonceList.add(pure_nonce);
 			String token = user.generateToken();
 			return answerRequest("OK", token);
 		} catch (UnsupportedEncodingException e) {

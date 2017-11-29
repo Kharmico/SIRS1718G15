@@ -12,6 +12,7 @@ public final class MaintenanceUtil {
 	private static final String UTF8 = "UTF-8";
 
 	public static boolean checkResponse(byte[] nounce, byte[]signature, String response, DateTime cleanSchedule, ArrayList<String> nounces, EncryptionUtil encryption, EncryptionUtil svEncryption) throws UnsupportedEncodingException, ParseException, SignatureException {
+
 		MaintenanceUtil.cleanNounces(nounces, cleanSchedule);
 		//check nounce
 		
@@ -26,16 +27,17 @@ public final class MaintenanceUtil {
 		else {
 			return false;
 		}
-		
+
 		if(!DateUtil.checkFreshnessMinutes(DateUtil.convertDate(parsedNounce[1]), 5)) {
 			return false;
 		}
-		
+
 		//check signature
 		String signatureGuess = response.concat(pureNounce);
 		
 		return svEncryption.verifySignature(signatureGuess.getBytes(UTF8), signature);
 	}
+
 	
 	public static void cleanNounces(ArrayList<String> nounces,DateTime cleanSchedule) throws ParseException {
 		if(DateUtil.checkStinkDays(cleanSchedule,2)) {

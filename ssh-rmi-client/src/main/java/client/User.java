@@ -98,7 +98,7 @@ public class User {
 		List<byte[]> response = gateway.RegisterUser(aName, aPassword, nName, nPassword, nounce, signature, token);
 		
 		//decrypt response
-		String pureResponse = new String(encryption.decrypt(response.get(3)), UTF8);
+		String pureResponse = new String(encryption.decrypt(response.get(2)), UTF8);
 
 		
 		try {	
@@ -167,7 +167,7 @@ public class User {
 		List<byte[]> response = gateway.DeleteUser(aName, aPassword, nName, nounce, signature, token);
 	
 		//decrypt response
-		String pureResponse = new String(encryption.decrypt(response.get(3)), UTF8);
+		String pureResponse = new String(encryption.decrypt(response.get(2)), UTF8);
 
 		
 		try {	
@@ -429,7 +429,7 @@ public class User {
 			String pureResponse = new String(encryption.decrypt(response.get(2)), UTF8);
 
 			
-			try {	
+			try {
 				if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
 					System.out.println("Succesfully Authenticated");
 					encryption.setKeyPaths("keys/"+username+"UserPublicKey.key", "keys/"+username+"UserPrivateKey.key");
@@ -561,7 +561,7 @@ public class User {
 	
 					case "register":
 	
-						if(parsedInput.length == 3) {
+						if(parsedInput.length == 5) {
 							g.RegisterUser(parsedInput[1], parsedInput[2], parsedInput[3], parsedInput[4]);
 						}
 						else {
@@ -571,7 +571,7 @@ public class User {
 	
 					case "delete":
 	
-						if(parsedInput.length == 2) {
+						if(parsedInput.length == 4) {
 							g.DeleteUser(parsedInput[1], parsedInput[2], parsedInput[3]);
 						}
 						else {

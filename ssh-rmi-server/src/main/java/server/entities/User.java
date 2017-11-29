@@ -3,7 +3,6 @@ package server.entities;
 import java.security.Key;
 import java.util.UUID;
 import org.joda.time.DateTime;
-
 import utils.EncryptionUtil;
 
 public class User {
