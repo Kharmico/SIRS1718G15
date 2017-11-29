@@ -20,6 +20,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.crypto.SecretKey;
 
+import org.joda.time.DateTime;
+
 import server.Services.GatewayService;
 import utils.DateUtil;
 import utils.EncryptionUtil;
@@ -30,11 +32,13 @@ public class User {
 	private static final String UTF8 = "UTF-8";
 	
 	//Encryption
+	private String gatewayPublicKeyPath;
+	
 	private EncryptionUtil svEncryption;
 	private EncryptionUtil encryption;
 	private ArrayList<String> nounces = new ArrayList<String>();
 	
-	private Date cleanSchedule = new Date();
+	private DateTime cleanSchedule = new DateTime().now();
 	
 	
 	
@@ -47,7 +51,7 @@ public class User {
 		gateway = stub;
 		token = null;
 		
-		encryption = new EncryptionUtil();
+		encryption = new EncryptionUtil("keys/adminUserPublicKey.key","keys/adminUserPrivateKey.key");
 		svEncryption = new EncryptionUtil();
 
 		byte[] response = stub.GetPublicKey();
@@ -55,6 +59,8 @@ public class User {
 		Key pureResponse =svEncryption.byteArrayToPubKey(decoded);
 		
 		svEncryption.setPublicKey(pureResponse, "gateway");
+		
+		gatewayPublicKeyPath = "gatewayPublicKey.key";
 		
 		System.out.println("You can now communicate with the Server [Help for commands]");
 	}
@@ -99,7 +105,7 @@ public class User {
 
 		
 		try {	
-			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption)) {
+			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
 				if(pureResponse.equals("OK")) {
 					System.out.println("User succesfully registered");
 				}
@@ -168,7 +174,7 @@ public class User {
 
 		
 		try {	
-			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption)) {
+			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
 				if(pureResponse.equals("OK")) {
 					System.out.println("User succesfully deleted");
 				}
@@ -237,7 +243,7 @@ public class User {
 		}
 		
 		try {	
-			if(MaintenanceUtil.checkResponse(response.get(0).get(0), response.get(0).get(1), pureResponse.toString(), cleanSchedule, nounces, encryption)) {
+			if(MaintenanceUtil.checkResponse(response.get(0).get(0), response.get(0).get(1), pureResponse.toString(), cleanSchedule, nounces, encryption, svEncryption)) {
 				if(pureResponse.get(0).equals("INVALID_TOKEN")) {
 					System.out.println("Your session has ended");
 					return;
@@ -301,7 +307,7 @@ public class User {
 
 		
 		try {	
-			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse.toString(), cleanSchedule, nounces, encryption)) {
+			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse.toString(), cleanSchedule, nounces, encryption, svEncryption)) {
 				if(pureResponse.get(0).equals("INVALID_TOKEN")) {
 					System.out.println("Your session has ended");
 					return;
@@ -363,7 +369,7 @@ public class User {
 
 		
 		try {	
-			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption)) {
+			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
 				if(pureResponse.equals("OK")) {
 					System.out.println("Command Succesfully Executed");
 				}
@@ -404,30 +410,30 @@ public class User {
 		String pureSignature = username + password + authString + pureNounce;
 		
 		byte[] signature = null;
+		
 		try {
-			signature = svEncryption.generateSignature(pureSignature.getBytes(UTF8));
+			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
 		} catch (SignatureException e) {
 			System.out.println("[ERROR] Couldn't generate signature");
 		}
-		
+
 		//encrypt
 		byte[] name = svEncryption.encrypt(username.getBytes(UTF8));
 		byte[] pass = svEncryption.encrypt(password.getBytes(UTF8));
 
-		
 		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
-		
+
 		//TODO: Later Check if the user has a token! This should happen to every method
 		if(authString.equals("")) {
 			//Normal Login
 			response = gateway.Login(name, pass, nounce, signature);
 			
 			//decrypt response
-			String pureResponse = new String(svEncryption.decrypt(response.get(3)), UTF8);
+			String pureResponse = new String(encryption.decrypt(response.get(2)), UTF8);
 
 			
 			try {	
-				if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption)) {
+				if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
 					System.out.println("Succesfully Authenticated");
 					encryption.setKeyPaths("keys/"+username+"UserPublicKey.key", "keys/"+username+"UserPrivateKey.key");
 					token = response.get(3);
@@ -436,6 +442,9 @@ public class User {
 				else if(pureResponse.equals("NOK")) {
 					System.out.println("Wrong Username or Password!");
 					return;
+				}
+				else {
+					System.out.println("Unrecognizable response! - " + pureResponse);
 				}
 				
 				System.out.println("Something went wrong with your request!");
@@ -459,10 +468,10 @@ public class User {
 			response = gateway.ReplenishLogin(encryption.base64Encoder(encryption.pubKeyToByteArray()), name, pass, auth, nounce, signature);
 			
 			//decrypt response
-			String pureResponse = new String(response.get(3), UTF8);
+			String pureResponse = new String(response.get(2), UTF8);
 
 			try {	
-				if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption)) {
+				if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
 					System.out.println("Succesfully Authenticated");
 					token = response.get(3);
 					return;

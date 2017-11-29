@@ -20,10 +20,12 @@ import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
-import server.Services.GatewayService;
+import org.joda.time.DateTime;
+
 import utils.EncryptionUtil;
 import utils.DateUtil;
 import utils.MaintenanceUtil;
+import server.Services.GatewayService;
 import server.entities.Device;
 import server.entities.User;
 
@@ -80,14 +82,13 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	}
 
 	public List<byte[]> Login(byte[] username, byte[] password, byte[] nounce, byte[] signature) {
-		
 		String str_nonce;
 		byte[] dec_nonce = encUtil.decrypt(nounce);
 		try {
 			// nonce%timestamp
 			str_nonce = new String(dec_nonce, "UTF-8");
 			String[] strings_nonce = str_nonce.split("%");
-			Date nonceDate = DateUtil.convertDate(strings_nonce[1]);
+			DateTime nonceDate = DateUtil.convertDate(strings_nonce[1]);
 			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2)) {
 				// create nonce+timestamp, concatenate with % in the middle
 				// choose which type of response to send!!! (check on User from user-side for types)
@@ -101,8 +102,8 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				byte[] sigToSend = null;
 				sigToSend = encUtil.generateSignature(pureSignature.getBytes(UTF8));
 
-				byte[] nounceToSend = encUtil.encrypt(pureNounce.getBytes(UTF8));
-				byte[] responseToSend = encUtil.encrypt(response.getBytes(UTF8));
+				byte[] nounceToSend = user.getEncUtils().encrypt(pureNounce.getBytes(UTF8));
+				byte[] responseToSend = user.getEncUtils().encrypt(response.getBytes(UTF8));
 				
 				List<byte[]> answerRequest = new ArrayList<byte[]>();
 				answerRequest.add(nounceToSend);

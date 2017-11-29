@@ -6,11 +6,13 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 
+import org.joda.time.DateTime;
+
 public final class MaintenanceUtil {
 	//Static
 	private static final String UTF8 = "UTF-8";
 
-	public static boolean checkResponse(byte[] nounce, byte[]signature, String response, Date cleanSchedule, ArrayList<String> nounces, EncryptionUtil encryption) throws UnsupportedEncodingException, ParseException, SignatureException {
+	public static boolean checkResponse(byte[] nounce, byte[]signature, String response, DateTime cleanSchedule, ArrayList<String> nounces, EncryptionUtil encryption, EncryptionUtil svEncryption) throws UnsupportedEncodingException, ParseException, SignatureException {
 		MaintenanceUtil.cleanNounces(nounces, cleanSchedule);
 		//check nounce
 		
@@ -34,14 +36,14 @@ public final class MaintenanceUtil {
 		String signatureGuess = response.concat(pureNounce);
 		
 		
-		return encryption.verifySignature(signatureGuess.getBytes(UTF8), signature);
+		return svEncryption.verifySignature(signatureGuess.getBytes(UTF8), signature);
 	}
 	
-	public static void cleanNounces(ArrayList<String> nounces,Date cleanSchedule) throws ParseException {
+	public static void cleanNounces(ArrayList<String> nounces,DateTime cleanSchedule) throws ParseException {
 		if(DateUtil.checkStinkDays(cleanSchedule,2)) {
 			for(int i = 0; i < nounces.size(); i++) {
 				String[] parsedNounce = nounces.get(i).split("%");
-				Date timestamp = DateUtil.convertDate(parsedNounce[1]);
+				DateTime timestamp = DateUtil.convertDate(parsedNounce[1]);
 				if(DateUtil.checkStinkDays(timestamp,2)) {
 					nounces.remove(i);
 				}

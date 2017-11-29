@@ -6,42 +6,45 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
+import org.joda.time.DateTime;
+import org.joda.time.Days;
+import org.joda.time.Minutes;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+
 public final class DateUtil {
 
 	private DateUtil() {}
 	
 	public static String getTimestamp() {
-		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		Date date = new Date();
-		return dateFormat.format(date);
+		DateTimeFormatter dateFormat = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm:ss");
+		DateTime date = new DateTime().now();
+		return dateFormat.print(date);
 	}
 	
-	public static Date convertDate(String timestamp) throws ParseException {
-		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		return dateFormat.parse(timestamp);
+	public static DateTime convertDate(String timestamp) throws ParseException {
+		DateTimeFormatter dateFormat = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm:ss");
+		return dateFormat.parseDateTime(timestamp);
 	}
 	
 	
-	public static boolean checkStinkDays(Date date, int quantity) {
-		Date now = new Date();
+	public static boolean checkStinkDays(DateTime date, int quantity) throws ParseException {
+		DateTime now = new DateTime();
 		
-		long timeout = TimeUnit.MILLISECONDS.convert(quantity, TimeUnit.DAYS);
-		long diff = now.getTime() - date.getTime();
-		
-		return   diff >= timeout;
-	}
-	
-	public static boolean checkFreshnessMinutes(Date date, int quantity) {
-		Date now = new Date();
-		
-		if(now.before(date)) {
+		if(now.isBefore(date)) {
 			return false;
 		}
 		
-		long timeout = TimeUnit.MILLISECONDS.convert(quantity, TimeUnit.MINUTES);
-		long diff = now.getTime() - date.getTime();
+		return Days.daysBetween(now, date).getDays() >= quantity;
+	}
+	
+	public static boolean checkFreshnessMinutes(DateTime date, int quantity) throws ParseException {
+		DateTime now = new DateTime();
 		
+		if(now.isBefore(date)) {
+			return false;
+		}
 		
-		return   diff <= timeout;
+		return Minutes.minutesBetween(now, date).getMinutes() <= quantity;
 	}
 }
