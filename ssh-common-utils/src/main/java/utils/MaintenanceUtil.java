@@ -4,7 +4,6 @@ import java.io.UnsupportedEncodingException;
 import java.security.SignatureException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Date;
 
 import org.joda.time.DateTime;
 
@@ -21,7 +20,7 @@ public final class MaintenanceUtil {
 		String[] parsedNounce = pureNounce.split("%");
 		
 		//checks if nounce doesnt exist and its still fresh
-		if(nounces.contains(pureNounce)) {
+		if(!nounces.contains(pureNounce)) {
 			nounces.add(pureNounce);
 		}
 		else {
@@ -34,7 +33,6 @@ public final class MaintenanceUtil {
 		
 		//check signature
 		String signatureGuess = response.concat(pureNounce);
-		
 		
 		return svEncryption.verifySignature(signatureGuess.getBytes(UTF8), signature);
 	}

@@ -16,7 +16,6 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
-import java.util.Date;
 import sun.security.x509.*;
 
 public class EncryptionUtil {
@@ -403,7 +402,4 @@ public class EncryptionUtil {
         return decipheredData;
     }
     
-    
-    
-
 }

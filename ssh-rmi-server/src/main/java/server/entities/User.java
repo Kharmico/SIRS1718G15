@@ -1,8 +1,8 @@
 package server.entities;
 
 import java.security.Key;
-import java.util.Date;
 import java.util.UUID;
+import org.joda.time.DateTime;
 
 import utils.EncryptionUtil;
 
@@ -13,18 +13,18 @@ public class User {
 	private String password;
 	private String type;
 	private String loginUuid;
-	private Date loginDate;
+	private DateTime loginDate;
 	
 	public User(String username, String password, String type){
 		this.username = username;
-		this.password = password;
+		this.setPassword(password);
 		this.type = type;
 		this.encUtils = new EncryptionUtil();
 	}
 	
 	public User(String username, String password, String type, Key pubKey){
 		this.username = username;
-		this.password = password;
+		this.setPassword(password);
 		this.type = type;
 		this.encUtils = new EncryptionUtil();
 		encUtils.setPublicKey(pubKey, username+"User");
@@ -32,6 +32,14 @@ public class User {
 	
 	public String getUsername() {
 		return username;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
 	}
 
 	public String getType() {
@@ -50,11 +58,11 @@ public class User {
 		this.loginUuid = loginUuid;
 	}
 
-	public Date getLoginDate() {
+	public DateTime getLoginDate() {
 		return loginDate;
 	}
 
-	public void setLoginDate(Date loginDate) {
+	public void setLoginDate(DateTime loginDate) {
 		this.loginDate = loginDate;
 	}
 
@@ -63,7 +71,7 @@ public class User {
 	}
 	
 	public String generateToken(){
-		Date now = new Date();
+		DateTime now = new DateTime().now();
 		this.loginDate = now;
 		this.loginUuid = UUID.randomUUID().toString();
 		String token = this.username + this.type + this.loginUuid + this.loginDate.toString();

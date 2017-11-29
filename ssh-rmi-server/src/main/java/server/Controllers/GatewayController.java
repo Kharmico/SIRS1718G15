@@ -9,10 +9,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.SignatureException;
 import java.text.ParseException;
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,8 +19,8 @@ import javax.crypto.SecretKey;
 
 import org.joda.time.DateTime;
 
-import utils.EncryptionUtil;
 import utils.DateUtil;
+import utils.EncryptionUtil;
 import utils.MaintenanceUtil;
 import server.Services.GatewayService;
 import server.entities.Device;
@@ -44,7 +41,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	// GatewayController Constructor
 	public GatewayController() throws RemoteException {
 		encUtil.generateKeys("gateway");
-		user = new User("admin", "ADMIN", "admin");
+		user = new User("admin", "admin", "ADMIN");
 		user.getEncUtils().setKeyPaths("keys/adminUserPublicKey.key", "");
 	}
 
@@ -86,33 +83,37 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		byte[] dec_nonce = encUtil.decrypt(nounce);
 		try {
 			// nonce%timestamp
-			str_nonce = new String(dec_nonce, "UTF-8");
-			String[] strings_nonce = str_nonce.split("%");
-			DateTime nonceDate = DateUtil.convertDate(strings_nonce[1]);
+			String pure_nonce = new String(dec_nonce, UTF8);
+			String[] strings_nonce = pure_nonce.split("%");
+			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
+			System.out.println("BEFORE FRESHNESS CHECKING!!!");
 			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2)) {
-				// create nonce+timestamp, concatenate with % in the middle
-				// choose which type of response to send!!! (check on User from user-side for types)
-				// sign everything!!!
-				String response = "NOFRESH";
-				String timestamp = DateUtil.getTimestamp();
-				String uuid = UUID.randomUUID().toString();
-				String pureNounce = uuid + "%" + timestamp;
-				String pureSignature = response.concat(pureNounce);
-				
-				byte[] sigToSend = null;
-				sigToSend = encUtil.generateSignature(pureSignature.getBytes(UTF8));
-
-				byte[] nounceToSend = user.getEncUtils().encrypt(pureNounce.getBytes(UTF8));
-				byte[] responseToSend = user.getEncUtils().encrypt(response.getBytes(UTF8));
-				
-				List<byte[]> answerRequest = new ArrayList<byte[]>();
-				answerRequest.add(nounceToSend);
-				answerRequest.add(sigToSend);
-				answerRequest.add(responseToSend);
-				
 				System.out.println("WRONG LOGIN ATTEMPT: FRESHNESS ISSUES!!!");
-				return answerRequest;
+				return answerRequest("NOFRESH");
 			}
+			//TODO: Verify signature, if it passes then verify login info!!! If all good, then...
+			//LOGGED IN!!! Must create a token!!!
+			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			String usernameToCheck = new String(encUtil.decrypt(username), UTF8);
+			String passwordToCheck = new String(encUtil.decrypt(password), UTF8);
+			String dataToCheck = usernameToCheck + passwordToCheck + pure_nonce;
+			
+			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
+				System.out.println("WRONG LOGIN ATTEMPT: SIGNATURE VERIFICATION!!!");
+				return answerRequest("WRONGSIG");
+			}
+			
+			System.out.println("BEFORE LOGIN CREDENTIALS CHECKING!!!\n" + usernameToCheck + " " + passwordToCheck + " " + user.getUsername() + " " + user.getPassword());
+			if(!(usernameToCheck.equals(user.getUsername()) && passwordToCheck.equals(user.getPassword()))) {
+				System.out.println("WRONG LOGIN ATTEMPT: LOGIN CRAP VERIFICATION!!!");
+				return answerRequest("NOK");
+			}
+
+			System.out.println("I GOT HERE!!! WOOHOO!!!");
+			
+			String token = user.generateToken();
+			return answerRequest("OK", token);
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		} catch (ParseException e) {
@@ -121,7 +122,6 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			System.out.println("[ERROR] Couldn't generate signature");
 			e.printStackTrace();
 		}
-		
 		return null;
 	}
 
@@ -190,6 +190,50 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	
 	public void closeListeningDevicesSocket() throws IOException{
 		registerSocket.close();
+	}
+	
+	private List<byte[]> answerRequest(String reqResponse) throws UnsupportedEncodingException, SignatureException {
+		String response = reqResponse;
+		String timestamp = DateUtil.getTimestamp();
+		String uuid = UUID.randomUUID().toString();
+		String pureNounce = uuid + "%" + timestamp;
+		String pureSignature = response.concat(pureNounce);
+		
+		byte[] sigToSend = null;
+		sigToSend = encUtil.generateSignature(pureSignature.getBytes(UTF8));
+
+		byte[] nounceToSend = user.getEncUtils().encrypt(pureNounce.getBytes(UTF8));
+		byte[] responseToSend = user.getEncUtils().encrypt(response.getBytes(UTF8));
+		
+		List<byte[]> answerRequest = new ArrayList<byte[]>();
+		answerRequest.add(nounceToSend);
+		answerRequest.add(sigToSend);
+		answerRequest.add(responseToSend);
+		
+		return answerRequest;
+	}
+	
+	private List<byte[]> answerRequest(String reqResponse, String token) throws UnsupportedEncodingException, SignatureException {
+		String response = reqResponse;
+		String timestamp = DateUtil.getTimestamp();
+		String uuid = UUID.randomUUID().toString();
+		String pureNounce = uuid + "%" + timestamp;
+		String pureSignature = response.concat(pureNounce);
+		
+		byte[] sigToSend = null;
+		sigToSend = encUtil.generateSignature(pureSignature.getBytes(UTF8));
+
+		byte[] nounceToSend = user.getEncUtils().encrypt(pureNounce.getBytes(UTF8));
+		byte[] responseToSend = user.getEncUtils().encrypt(response.getBytes(UTF8));
+		byte[] tokenToSend = encUtil.encrypt(token.getBytes(UTF8));
+		
+		List<byte[]> answerRequest = new ArrayList<byte[]>();
+		answerRequest.add(nounceToSend);
+		answerRequest.add(sigToSend);
+		answerRequest.add(responseToSend);
+		answerRequest.add(tokenToSend);
+		
+		return answerRequest;
 	}
 	
 }
