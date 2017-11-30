@@ -2,6 +2,7 @@ import socket               # Import socket module
 import _thread
 import base64
 import os
+import time, threading
 from sys import getsizeof
 from random import randint
 
@@ -125,10 +126,14 @@ def dataTransfer(conn, s):
         print("Data has been sent!")
     conn.close()
     
-    
-
+def periodicSend(message, socket):
+	socket.sendall(bytes(message, 'utf-8')) 
+	#print(message + time.ctime())
+	threading.Timer(1, periodicSend, [message,socket]).start()
+	
 def serveGateway(conn):
     print ("Handling Gateway")
+    periodicSend("boi",conn)
     while True:
         # Receive the data
         data = conn.recv(1028) # receive the data

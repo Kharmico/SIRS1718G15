@@ -14,6 +14,7 @@ public class GatewayApplication {
 	public static final int SERVERPORT = 8080;
 	
 	public static void main(String[] args){
+		System.out.println(args[0] + " " + args[1]);
 		String name = args[0];
 		int registryPort = Integer.parseInt(args[1]);
 		
@@ -47,13 +48,12 @@ public class GatewayApplication {
 		System.out.println("sonic");
 		while(true){
 			//do stuff
-			Thread.sleep(1000);
+			Thread.sleep(3000);
 			Map<String, Helper> devConnections = stub.devConnections;
 			if(devConnections == null) continue;
 			for ( Map.Entry<String, Helper> e : devConnections.entrySet()){
-				String state = "";
-				if (e.getValue().getDeviceState() != null ) state = e.getValue().getDeviceState().toString();
-				else state = "Null";
+				String state = e.getValue().getDeviceState();
+				if ( state == null ) state = "Null";
 				System.out.println(e.getKey() +":"+ state);
 			}
 			
@@ -68,6 +68,8 @@ public class GatewayApplication {
 
             while(true) {
             	switch(scanner.nextLine()) {
+            		case "getstatus":
+            			break;
             		case "exit":
         				System.exit(MAX_PRIORITY);
             			break;
