@@ -22,6 +22,7 @@ import org.joda.time.DateTime;
 import utils.DateUtil;
 import utils.EncryptionUtil;
 import utils.MaintenanceUtil;
+import utils.BufferUtil;
 import server.Services.GatewayService;
 import server.entities.Device;
 import server.entities.User;
@@ -426,11 +427,11 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 						InputStream in = connection.getInputStream();
 
 						byte[] data = new byte[100];
-						int count = in.read(data);
+						int count = BufferUtil.readInputStreamWithTimeout( in, data, 1000 ); 
 						String deviceName ="";
 
 						if ( count >0 ) {
-							deviceName = new String(data, "UTF-8");
+							deviceName = new String(data, "UTF-8").trim().split(":")[0];
 							System.out.println(deviceName);
 						}
 						else {
@@ -438,8 +439,9 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 							connection.close();
 							continue;
 						};
-
-						Helper con = new Helper(connection); /* call a nanny to take
+						String devPort = new String(data, "UTF-8").trim().split(":")[1] ;
+						String socketHost = connection.getInetAddress().getHostName();
+						Helper con = new Helper(connection, Integer.parseInt(devPort)); /* call a nanny to take
 	     	                                                            care of it */
 						devConnections.put(deviceName, con); /* make++ sure you keep a ref to it, just in case */
 						con.start();	/* this code is executed when a client connects... */

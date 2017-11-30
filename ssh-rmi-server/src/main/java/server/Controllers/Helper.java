@@ -7,20 +7,26 @@ import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class Helper extends Thread{
-	private Socket socket = null;
-	private DataInputStream in= null;
-	private PrintStream out= null;
+	private Socket socketOUT = null;
+	private Socket socketIN = null;
+	
+	private DataInputStream OUTin= null;
+	private PrintStream OUTout= null;
+	private DataInputStream INin= null;
+	private PrintStream INout= null;
+	
 	private volatile String deviceState = "";
 	private LinkedBlockingQueue <String> msgToSend = new LinkedBlockingQueue <String>();
 	
     public String getDeviceState() {
-    	out.print("GETSTATUS");
+    	OUTout.print("GETSTATUS");
     	byte[] bytes = new byte[1024];
     	try {
-			in.read(bytes);
+			OUTin.read(bytes);
 			deviceState = new String(bytes, "UTF-8").trim();
 			String temp = deviceState;
 			//deviceState = "";
@@ -32,22 +38,22 @@ public class Helper extends Thread{
 		
 	}
 
-	public Helper(Socket socket) {
+	public Helper(Socket socket, int deviceListenPort) throws UnknownHostException, IOException {
 
         super("Helper");
-        this.socket = socket;
-
+        this.socketOUT = socket;
+        
+        socketIN = new Socket(socket.getInetAddress().getHostAddress(), deviceListenPort);
+        
+        OUTin = new DataInputStream(new BufferedInputStream(socketOUT.getInputStream()));
+		OUTout = new PrintStream(socketOUT.getOutputStream());
+		INin = new DataInputStream(new BufferedInputStream(socketIN.getInputStream()));
+		INout = new PrintStream(socketIN.getOutputStream());
     }
 
     public void run(){
-    	try {
-    		// Get socket streams
-    		in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
-    		out = new PrintStream(socket.getOutputStream());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-            //Read input and process here
+    	
+        //Read input and process here
     	//pollMsgToSend("GETSTATUS");pollMsgToSend("SWITCH");pollMsgToSend("GETSTATUS");
     	int mCnt = 0;
     	while(true){
@@ -60,7 +66,7 @@ public class Helper extends Thread{
     			
     			byte[] bytes = new byte[1024];
     			
-				/*int i =*/ in.read(bytes);
+				/*int i =*/ INin.read(bytes);
 				String rcvdMessage = new String(bytes, "UTF-8").trim();
 				System.out.println(rcvdMessage);
 //				//if(i > 0) System.out.println(state.trim());
