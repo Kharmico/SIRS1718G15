@@ -80,7 +80,7 @@ public class User {
 		
 		byte[] signature = null;
 		try {
-			signature = svEncryption.generateSignature(pureSignature.getBytes(UTF8));
+			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
 		} catch (SignatureException e) {
 			System.out.println("[ERROR] Couldn't generate signature");
 		}
@@ -105,6 +105,7 @@ public class User {
 			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
 				if(pureResponse.equals("OK")) {
 					System.out.println("User succesfully registered");
+					new EncryptionUtil().generateKeys(name + "User");
 				}
 				else if(pureResponse.equals("NOK")) {
 					System.out.println("User could not be registered");
@@ -150,7 +151,7 @@ public class User {
 		
 		byte[] signature = null;
 		try {
-			signature = svEncryption.generateSignature(pureSignature.getBytes(UTF8));
+			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
 		} catch (SignatureException e) {
 			System.out.println("[ERROR] Couldn't generate signature");
 		}
@@ -217,7 +218,7 @@ public class User {
 		
 		byte[] signature = null;
 		try {
-			signature = svEncryption.generateSignature(pureSignature.getBytes(UTF8));
+			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
 		} catch (SignatureException e) {
 			System.out.println("[ERROR] Couldn't generate signature");
 		}
@@ -283,7 +284,7 @@ public class User {
 		
 		byte[] signature = null;
 		try {
-			signature = svEncryption.generateSignature(pureSignature.getBytes(UTF8));
+			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
 		} catch (SignatureException e) {
 			System.out.println("[ERROR] Couldn't generate signature");
 		}
@@ -347,7 +348,7 @@ public class User {
 		
 		byte[] signature = null;
 		try {
-			signature = svEncryption.generateSignature(pureSignature.getBytes(UTF8));
+			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
 		} catch (SignatureException e) {
 			System.out.println("[ERROR] Couldn't generate signature");
 		}
@@ -392,6 +393,9 @@ public class User {
 	}
 
 	public void Login(String username, String password, String authString) throws RemoteException, UnsupportedEncodingException {
+
+		encryption.setKeyPaths("keys/"+username+"UserPublicKey.key", "keys/"+username+"UserPrivateKey.key");
+		
 		
 		List<byte[]> response = null;
 		
@@ -431,17 +435,18 @@ public class User {
 			
 			try {
 				if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
-					System.out.println("Succesfully Authenticated");
-					encryption.setKeyPaths("keys/"+username+"UserPublicKey.key", "keys/"+username+"UserPrivateKey.key");
-					token = response.get(3);
-					return;
-				}
-				else if(pureResponse.equals("NOK")) {
-					System.out.println("Wrong Username or Password!");
-					return;
-				}
-				else {
-					System.out.println("Unrecognizable response! - " + pureResponse);
+					if(pureResponse.equals("OK")) {
+						System.out.println("Succesfully Authenticated");
+						token = response.get(3);
+						return;
+					}
+					else if(pureResponse.equals("NOK")) {
+						System.out.println("Wrong Username or Password!");
+						return;
+					}
+					else {
+						System.out.println("Unrecognizable response! - " + pureResponse);
+					}
 				}
 				
 				System.out.println("Something went wrong with your request!");
@@ -459,8 +464,6 @@ public class User {
 		else {
 			//Replenish Login
 			byte[] auth = svEncryption.encrypt(authString.getBytes(UTF8));
-
-			encryption.generateKeys(username + "User");
 			
 			response = gateway.ReplenishLogin(encryption.base64Encoder(encryption.pubKeyToByteArray()), name, pass, auth, nounce, signature);
 			

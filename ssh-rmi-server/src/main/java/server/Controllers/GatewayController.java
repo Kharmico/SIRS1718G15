@@ -73,9 +73,10 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				System.out.println("WRONG REGISTER ATTEMPT: SIGNATURE VERIFICATION!!!");
 				return answerRequest("WRONGSIG");
 			}
-			
+
+			System.out.println("BEFORE DECRYPTING TOKEN!!!");
 			String tokenToCheck = new String(encUtil.decrypt(token), UTF8);
-			if(tokenToCheck.equals(user.lastToken())) {
+			if(!tokenToCheck.equals(user.lastToken())) {
 				System.out.println("WRONG REGISTER ATTEMPT: INVALID TOKEN!!!");
 				return answerRequest("INVALID_TOKEN");
 			}
