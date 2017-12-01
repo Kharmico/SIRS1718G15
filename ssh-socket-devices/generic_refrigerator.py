@@ -9,6 +9,8 @@ host = ''
 port = 0
 
 GateWaySocket = ''
+GateWaySocketSendCmd = ''
+GateWayOutPort = 0
 
 state = ["OFF", "REFRIGERATING", "COOLING_DOWN"]
 curState = 0
@@ -25,6 +27,16 @@ def generateFactoryKey():
      print("decoded base64 secret key:" + str(decodedkey))
      return key, encodedkey 
 
+def setupGatewayServer():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    print("Socket created.")
+    try:
+        s.bind((host, GateWayOutPort))
+    except socket.error as msg:
+        print(msg)
+    print("GATEWAY Socket bind comPlete. Host:" + s.getsockname()[0]+ ";Port:"+str(s.getsockname()[1]))
+    return s
 
 def setupServer():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -102,18 +114,19 @@ def dataTransfer(conn, s):
             s.close()
             return
         elif command.startswith( 'CONNECT' ):
-            global GateWaySocket
+            global GateWaySocket, GateWaySocketSendCmds	    
             URL = command.split()[1].split(':')
             GateWaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             GateWaySocket.connect((URL[0], int(URL[1])))
             print (socket.getaddrinfo(URL[0], int(URL[1])))
             buffer_size = 100            
             reply = myName + '\n'
-            GateWaySocket.sendall(bytes(myName, 'utf-8'))
+            GateWaySocket.sendall(bytes(myName + ":" + str(GateWaySocketSendCmds.getsockname()[1]) , 'utf-8'))
             try:
                 _thread.start_new_thread( serveGateway, (GateWaySocket, ) )
             except:
                 print ("Error: unable to start thread")
+            GateWaySocketSendCmds.accept(1)
             
         else:
             reply = 'Unknown Command'
@@ -172,6 +185,7 @@ while True:
     try:
         factoryKey, base64FactoryKey = generateFactoryKey()
         conn = setupConnection()
+        GateWaySocketSendCmds = setupGatewayServer()
         dataTransfer(conn, s)
     except Exception as inst:
         print (inst)
