@@ -370,7 +370,7 @@ public class User {
 		List<byte[]> response = gateway.SendCommand(dName, sCommand, nounce, signature, token);
 		
 		//decrypt response
-		String pureResponse = new String(encryption.decrypt(response.get(3)), UTF8);
+		String pureResponse = new String(encryption.decrypt(response.get(2)), UTF8);
 
 		
 		try {	

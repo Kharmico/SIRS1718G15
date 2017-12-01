@@ -1,6 +1,7 @@
 package server.entities;
 
 import java.security.Key;
+import java.security.PublicKey;
 import java.util.UUID;
 import org.joda.time.DateTime;
 import utils.EncryptionUtil;
@@ -13,12 +14,15 @@ public class User {
 	private String type;
 	private String loginUuid;
 	private DateTime loginDate;
+	private PublicKey pubKey;
+	private String authCode;
 	
 	public User(String username, String password, String type){
 		this.username = username;
 		this.setPassword(password);
 		this.type = type;
 		this.encUtils = new EncryptionUtil();
+		this.pubKey = null;
 	}
 	
 	public User(String username, String password, String type, Key pubKey){
@@ -27,6 +31,7 @@ public class User {
 		this.type = type;
 		this.encUtils = new EncryptionUtil();
 		encUtils.setPublicKey(pubKey, username+"User");
+		this.pubKey = this.encUtils.getPublicKey();
 	}
 	
 	public String getUsername() {
@@ -80,5 +85,11 @@ public class User {
 	public String lastToken(){
 		String token = this.username + this.type + this.loginUuid + this.loginDate.toString();
 		return token;
+	}
+	
+	public PublicKey getPubKey(){
+		if(this.pubKey == null)
+			this.pubKey = this.encUtils.getPublicKey();
+		return this.pubKey;
 	}
 }
