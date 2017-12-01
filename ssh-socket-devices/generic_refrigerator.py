@@ -2,14 +2,17 @@ import socket               # Import socket module
 import _thread
 import os
 import base64
+import time, threading
 from sys import getsizeof
 from random import randint
+from Crypto.Cipher import AES
 
 host = ''
 port = 0
 
 GateWaySocket = ''
-GateWaySocketSendCmd = ''
+GateWaySocketListen = ''
+GateWaySocketSendCmds = ''
 GateWayOutPort = 0
 
 state = ["OFF", "REFRIGERATING", "COOLING_DOWN"]
@@ -18,6 +21,11 @@ myName = "Refrigerator " + str(randint(0,10))
 
 factoryKey = ''
 base64FactoryKey = ''
+
+def periodicSend(message, socket):
+	socket.sendall(bytes(message, 'utf-8')) 
+	#print(message + time.ctime())
+	threading.Timer(1, periodicSend, [message,socket]).start()
 
 def generateFactoryKey():
      key = os.urandom(16)			#128 bits
@@ -69,7 +77,7 @@ def switchState():
     reply = "The "+ myName +" state has been switched!"
     return reply
 
-def encryption(privateInfo): 
+def encryption(privateInfo, secretkey): 
 	BLOCK_SIZE = 16 
 	PADDING ='{' 
 	
@@ -77,15 +85,16 @@ def encryption(privateInfo):
 	
 	EncodeAES = lambda c, s: base64.b64encode (c.encrypt (pad(s))) 
 	
-	secret = os.urandom(BLOCK_SIZE) 
-	print ('encryption key:'), secret
+	print ('encryption key:'), secretkey
 	
-	cipher = AES.new(secret) 
+	cipher = AES.new(secretkey) 
 	
 	encoded = EncodeAES(cipher, privateInfo) 
 	print ('Encrypted string:'), encoded
-    
+	return encoded
+
 def dataTransfer(conn, s):
+    global GateWaySocket
     # A big loop that sends/receives data until told not to.
     while True:
         # Receive the data
@@ -111,22 +120,28 @@ def dataTransfer(conn, s):
             break
         elif command == 'KILL':
             print("Our server is shutting down.")
+            GateWaySocket.close()
             s.close()
             return
+        elif command.startswith( 'ENCRYPT' ):
+            reply = str(encryption("OLA MARCELO", factoryKey))
         elif command.startswith( 'CONNECT' ):
-            global GateWaySocket, GateWaySocketSendCmds	    
+            global GateWaySocketListen, GateWaySocketSendCmds 
             URL = command.split()[1].split(':')
             GateWaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             GateWaySocket.connect((URL[0], int(URL[1])))
-            print (socket.getaddrinfo(URL[0], int(URL[1])))
+            #print (socket.getaddrinfo(URL[0], int(URL[1])))
             buffer_size = 100            
             reply = myName + '\n'
-            GateWaySocket.sendall(bytes(myName + ":" + str(GateWaySocketSendCmds.getsockname()[1]) , 'utf-8'))
+            GateWaySocket.sendall(bytes(myName + ":" + str(GateWaySocketListen.getsockname()[1]) , 'utf-8'))
             try:
                 _thread.start_new_thread( serveGateway, (GateWaySocket, ) )
             except:
                 print ("Error: unable to start thread")
-            GateWaySocketSendCmds.accept(1)
+            GateWaySocketListen.listen(1)
+            GateWaySocketSendCmds, address = GateWaySocketListen.accept()
+            print("accepted GateWaySocketListen connecion")
+            #periodicSend("boi\n",GateWaySocketSendCmds)
             
         else:
             reply = 'Unknown Command'
@@ -164,15 +179,6 @@ def serveGateway(conn):
         elif command == 'KILL':
             print("Our device is shutting down.")
             return
-        elif command.startswith( 'CONNECT' ):
-            global GateWaySocket
-            URL = command.split()[1].split(':')
-            GateWaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            GateWaySocket.connect((URL[0], int(URL[1])))
-            print (socket.getaddrinfo(URL[0], int(URL[1])))
-            buffer_size = 100            
-            reply = myName + '\n'
-            GateWaySocket.sendall(bytes(myName, 'utf-8'))
         else:
             reply = '[GATEWAY]Unknown Command'
         conn.sendall(bytes(reply, 'utf-8')) 
@@ -185,7 +191,7 @@ while True:
     try:
         factoryKey, base64FactoryKey = generateFactoryKey()
         conn = setupConnection()
-        GateWaySocketSendCmds = setupGatewayServer()
+        GateWaySocketListen = setupGatewayServer()
         dataTransfer(conn, s)
     except Exception as inst:
         print (inst)

@@ -5,6 +5,7 @@ import os
 import time, threading
 from sys import getsizeof
 from random import randint
+from Crypto.Cipher import AES
 
 
 host = ''
