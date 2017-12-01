@@ -49,7 +49,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	//GatewayController Endpoints
 	
 	// Hash -> Username+Type(type of user, i.e. admin, regular user, etc.)+LastLoginDate+LastLoginUUID H{U+T+D+I}
-	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] nonce, byte[] signature, byte[] token) {
+	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] authCode, byte[] nonce, byte[] signature, byte[] token) {
 		byte[] dec_nonce = encUtil.decrypt(nonce);
 		try {
 			// nonce%timestamp
