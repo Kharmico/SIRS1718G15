@@ -31,7 +31,7 @@ public class GatewayApplication {
 
             System.out.println("Awaiting connections");
             System.out.println("Write \"exit\" to shutdown");
-            commandLineThread.start();
+            new commandLineThread(controller).start();
             cycle(controller);
             
         }catch(Exception e) {
@@ -49,26 +49,37 @@ public class GatewayApplication {
 		while(true){
 			//do stuff
 			Thread.sleep(3000);
-			Map<String, Helper> devConnections = stub.devConnections;
+			/*Map<String, Helper> devConnections = stub.devConnections;
 			if(devConnections == null) continue;
 			for ( Map.Entry<String, Helper> e : devConnections.entrySet()){
 				String state = e.getValue().getDeviceState();
 				if ( state == null ) state = "Null";
 				System.out.println(e.getKey() +":"+ state);
-			}
+			}*/
 			
 		}
 	}
 	
 
 	
-	private static Thread commandLineThread = new Thread() {
+	private static class commandLineThread extends Thread {
+		private final GatewayController stub;
+		public commandLineThread(GatewayController stub) {
+			this.stub=stub;
+		}
         public void run() {
         	Scanner scanner = new Scanner(System.in);
-
+  
             while(true) {
             	switch(scanner.nextLine()) {
             		case "getstatus":
+            			Map<String, Helper> devConnections = stub.devConnections;
+            			if(devConnections == null) continue;
+            			for ( Map.Entry<String, Helper> e : devConnections.entrySet()){
+            				String state = e.getValue().getDeviceState();
+            				if ( state == null ) state = "Null";
+            				System.out.println(e.getKey() +":"+ state);
+            			}
             			break;
             		case "exit":
         				System.exit(MAX_PRIORITY);
