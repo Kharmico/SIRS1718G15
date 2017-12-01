@@ -16,7 +16,7 @@ public class User {
 	private DateTime loginDate;
 	private PublicKey pubKey;
 	private String authCode;
-	
+
 	public User(String username, String password, String type){
 		this.username = username;
 		this.setPassword(password);
@@ -72,6 +72,10 @@ public class User {
 
 	public EncryptionUtil getEncUtils() {
 		return encUtils;
+	}
+	
+	public String getAuthCode() {
+		return authCode;
 	}
 	
 	public String generateToken(){

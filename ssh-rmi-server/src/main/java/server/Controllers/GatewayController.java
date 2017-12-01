@@ -52,6 +52,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] nonce, byte[] signature, byte[] token) {
 		byte[] dec_nonce = encUtil.decrypt(nonce);
 		try {
+			//TODO: SAVE AUTHENTICATION CODE FOR USER VERIFICATION ON FIRST LOGIN!!!
 			// nonce%timestamp
 			String pure_nonce = new String(dec_nonce, UTF8);
 			String[] strings_nonce = pure_nonce.split("%");
@@ -159,7 +160,6 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	}
 
 	public List<ArrayList<byte[]>> GetDeviceStatus(byte[] nonce, byte[] signature, byte[] token) {
-		//TODO: Check this function to really implement it correctly!!!
 		List<ArrayList<byte[]>> answerToRet = new ArrayList<ArrayList<byte[]>>();
 		byte[] dec_nonce = encUtil.decrypt(nonce);
 		try {
@@ -191,8 +191,14 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				return answerToRet;
 			}
 
+			if(devices == null) {
+				System.out.println("WRONG DEVICESTATUS ATTEMPT: NO_DEVICES!!!");
+				answerToRet.add((ArrayList) answerRequest("NODEV"));
+				return answerToRet;
+			}
+			
 			nonceList.add(pure_nonce);
-			return answerRequest(devices, null);
+			return answerRequestDevs(devices);
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		} catch (ParseException e) {
@@ -313,6 +319,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	public List<byte[]> ReplenishLogin(byte[] userPublicKey, byte[] username, byte[] password, byte[] authString, byte[] nonce, byte[] signature) {
 		byte[] dec_nonce = encUtil.decrypt(nonce);
 		try {
+			//TODO: CHECK AUTHENTICATION CODE!!!
 			// nonce%timestamp
 			String pure_nonce = new String(dec_nonce, UTF8);
 			String[] strings_nonce = pure_nonce.split("%");
@@ -341,9 +348,14 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				return answerRequest("NOK");
 			}
 			
-			//TODO: Be sure this is right!
+			if(!reg_user.getAuthCode().equals(authStringToCheck)){
+				System.out.println("WRONG REFRESH ATTEMPT: WRONG AUTHCODE VERIFICATION!!!");
+				return answerRequest("NO_AUTH");
+			}
+			
 			nonceList.add(pure_nonce);
-			return answerRequest("OK");
+			String token = user.generateToken();
+			return answerRequest("OK", token);
 			
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
@@ -495,7 +507,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	
 	//Need to differentiate these 2... Think think...
 	
-	private List<ArrayList<byte[]>> answerRequest(List<Device> reqResponse, List<String> noResponse) throws UnsupportedEncodingException, SignatureException {
+	private List<ArrayList<byte[]>> answerRequestDevs(List<Device> reqResponse) throws UnsupportedEncodingException, SignatureException {
 		String timestamp = DateUtil.getTimestamp();
 		String uuid = UUID.randomUUID().toString();
 		String pureNounce = uuid + "%" + timestamp;
