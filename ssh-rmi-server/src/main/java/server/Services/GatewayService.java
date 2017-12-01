@@ -10,7 +10,7 @@ import javax.crypto.SecretKey;
 
 public interface GatewayService extends Remote {
 	//Admin Requests
-	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] nonce, byte[] signature, byte[] token) throws RemoteException;
+	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] authCode, byte[] nonce, byte[] signature, byte[] token) throws RemoteException;
 	
 	public List<byte[]> DeleteUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] nonce, byte[] signature, byte[] token) throws RemoteException;
 	

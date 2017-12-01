@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -67,6 +68,9 @@ public class User {
 			System.out.println("Login before doing an action!");
 			return;
 		}
+
+		
+		String pureAuthCode = randomString();
 		
 		//make nounce
 		String timestamp = DateUtil.getTimestamp();
@@ -76,7 +80,7 @@ public class User {
 		
 		//make signature
 		
-		String pureSignature = adminName + adminPassword + name + password + pureNounce;
+		String pureSignature = adminName + adminPassword + name + password + pureAuthCode + pureNounce;
 		
 		byte[] signature = null;
 		try {
@@ -92,10 +96,12 @@ public class User {
 		byte[] nName = svEncryption.encrypt(name.getBytes(UTF8));
 		byte[] nPassword = svEncryption.encrypt(password.getBytes(UTF8));
 		
+		byte[] authcode = svEncryption.encrypt(pureAuthCode.getBytes(UTF8));
+		
 		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
 		
 		
-		List<byte[]> response = gateway.RegisterUser(aName, aPassword, nName, nPassword, nounce, signature, token);
+		List<byte[]> response = gateway.RegisterUser(aName, aPassword, nName, nPassword, authcode, nounce, signature, token);
 		
 		//decrypt response
 		String pureResponse = new String(encryption.decrypt(response.get(2)), UTF8);
@@ -105,6 +111,7 @@ public class User {
 			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
 				if(pureResponse.equals("OK")) {
 					System.out.println("User succesfully registered");
+					System.out.println("Your new user should use this string to authenticate: " + pureAuthCode);
 					new EncryptionUtil().generateKeys(name + "User");
 				}
 				else if(pureResponse.equals("NOK")) {
@@ -499,6 +506,20 @@ public class User {
 	//Helpers
 	private String getUUID(){
 		return UUID.randomUUID().toString();
+	}
+	
+	private String randomString(){
+		Random rand = new Random();
+		
+		int value = 0;
+		char[] string = new char[4];
+		
+		for(int i = 0; i < 4; i++) {
+			value = rand.nextInt(25);
+			string[i] = (char) (65 + value);
+		}
+		
+		return new String(string);
 	}
 	
 	
