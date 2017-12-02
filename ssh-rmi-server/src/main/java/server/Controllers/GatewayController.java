@@ -136,7 +136,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			String tokenToCheck = new String(encUtil.decrypt(token), UTF8);
-			if(tokenToCheck.equals(user.lastToken())) {
+			if(!tokenToCheck.equals(user.lastToken())) {
 				System.out.println("WRONG DELETE ATTEMPT: INVALID TOKEN!!!");
 				return answerRequest("INVALID_TOKEN");
 			}
@@ -179,7 +179,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 
 			System.out.println("BEFORE DECRYPTING SHIT!!!");
-			String dataToCheck = pure_nonce;
+			String dataToCheck = "getDeviceStatus" + pure_nonce;
 			
 			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
 			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
@@ -189,7 +189,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			String tokenToCheck = new String(encUtil.decrypt(token), UTF8);
-			if(tokenToCheck.equals(user.lastToken())) {
+			if(!tokenToCheck.equals(user.lastToken())) {
 				System.out.println("WRONG DEVICESTATUS ATTEMPT: INVALID TOKEN!!!");
 				answerToRet.add((ArrayList) answerRequest("INVALID_TOKEN"));
 				return answerToRet;
@@ -239,15 +239,15 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			String tokenToCheck = new String(encUtil.decrypt(token), UTF8);
-			if(tokenToCheck.equals(user.lastToken())) {
+			if(!tokenToCheck.equals(user.lastToken())) {
 				System.out.println("WRONG DEVICECMD ATTEMPT: INVALID TOKEN!!!");
 				return answerRequest("INVALID_TOKEN");
 			}
 			
-			if(!devConnections.containsKey(deviceToCheck)) {
-				System.out.println("WRONG DEVICECMD ATTEMPT: DEVICE DOES NOT EXIST");
-				return answerRequest("DEVICE_ERROR");
-			}
+//			if(!devConnections.containsKey(deviceToCheck)) {
+//				System.out.println("WRONG DEVICECMD ATTEMPT: DEVICE DOES NOT EXIST");
+//				return answerRequest("DEVICE_ERROR");
+//			}
 			
 			//TODO: Get this done right!!!
 			nonceList.add(pure_nonce);
@@ -291,7 +291,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			String tokenToCheck = new String(encUtil.decrypt(token), UTF8);
-			if(tokenToCheck.equals(user.lastToken())) {
+			if(!tokenToCheck.equals(user.lastToken())) {
 				System.out.println("WRONG SENDCMD ATTEMPT: INVALID TOKEN!!!");
 				return answerRequest("INVALID_TOKEN");
 			}
