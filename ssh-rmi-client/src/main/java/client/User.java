@@ -42,12 +42,14 @@ public class User {
 	
 	//Program
 	private GatewayService gateway;
+	private boolean session;
 	private byte[] token;
 	
 	//Methods
 	public User(GatewayService stub) throws RemoteException {
 		gateway = stub;
 		token = null;
+		session = false;
 		
 		encryption = new EncryptionUtil("keys/adminUserPublicKey.key","keys/adminUserPrivateKey.key");
 		svEncryption = new EncryptionUtil();
@@ -239,13 +241,13 @@ public class User {
 		//decrypt response
 		List<ArrayList<String>> pureResponse = new ArrayList<ArrayList<String>>();
 
-		for(ArrayList<byte[]> byteArray: response.subList(1, response.size() - 1)) {
+		for(ArrayList<byte[]> byteArray: response.subList(1, response.size())) {
 			String deviceName = new String(encryption.decrypt(byteArray.get(0)), UTF8);
 			String deviceStatus = new String(encryption.decrypt(byteArray.get(1)), UTF8);
 			String deviceType = new String(encryption.decrypt(byteArray.get(2)), UTF8);
-			
 			pureResponse.add(new ArrayList<String>(Arrays.asList(deviceName, deviceStatus, deviceType)));
 		}
+		
 		
 		try {	
 			if(MaintenanceUtil.checkResponse(response.get(0).get(0), response.get(0).get(1), pureResponse.toString(), cleanSchedule, nounces, encryption, svEncryption)) {
@@ -253,14 +255,16 @@ public class User {
 					System.out.println("Your session has ended");
 					return;
 				}
-				
-				System.out.println("Device Name\t|\tStatus\t|\tType");
+
+				System.out.println("Device Name\t|Status\t\t|Type");
+				System.out.println("----------------|---------------|------------");
 				if(response != null) {
-					for(int i = 1; i < pureResponse.size(); i++) {
+					for(int i = 0; i < pureResponse.size(); i++) {
 						List<String> device = pureResponse.get(i);
-						System.out.println( device.get(0) +"\t|\t"+ device.get(1) +"\t|\t"+ device.get(2));
+						System.out.println( device.get(0) +"\t\t|"+ device.get(1) +"\t\t|"+ device.get(2));
 					}
 				}
+				return;
 			}
 			System.out.println("Something went wrong with your request!");
 			
@@ -306,7 +310,7 @@ public class User {
 		//decrypt response		
 		List<String> pureResponse = new ArrayList<String>();
 		
-		for(byte[] byteArray: response.subList(2, response.size() - 1)) {
+		for(byte[] byteArray: response.subList(2, response.size())) {
 			pureResponse.add(new String(encryption.decrypt(byteArray), UTF8));
 		}
 
@@ -322,6 +326,7 @@ public class User {
 				for(String command: pureResponse) {
 					System.out.println(">> " + command);
 				}
+				return;
 			}
 			System.out.println("Something went wrong with your request!");
 			
@@ -387,6 +392,7 @@ public class User {
 				else {
 					System.out.println("Something went wrong!");
 				}
+				return;
 			}
 			System.out.println("Something went wrong with your request!");
 			
@@ -400,6 +406,11 @@ public class User {
 	}
 
 	public void Login(String username, String password, String authString) throws RemoteException, UnsupportedEncodingException {
+		if(session && token != null) {
+			System.out.println("You have an active session!");
+			return;
+		}
+		
 
 		encryption.setKeyPaths("keys/"+username+"UserPublicKey.key", "keys/"+username+"UserPrivateKey.key");
 		
@@ -421,7 +432,7 @@ public class User {
 		
 		try {
 			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
-		} catch (SignatureException e) {
+		} catch (Exception e) {
 			System.out.println("[ERROR] Couldn't generate signature");
 		}
 
@@ -445,6 +456,7 @@ public class User {
 					if(pureResponse.equals("OK")) {
 						System.out.println("Succesfully Authenticated");
 						token = response.get(3);
+						session = true;
 						return;
 					}
 					else if(pureResponse.equals("NOK")) {
@@ -479,12 +491,14 @@ public class User {
 
 			try {	
 				if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
-					System.out.println("Succesfully Authenticated");
-					token = response.get(3);
-					return;
-				}
-				else if(pureResponse.equals("NOK")) {
-					System.out.println("Wrong Username or Password!");
+					if(pureResponse.equals("OK")){
+						System.out.println("Succesfully Authenticated");
+						token = response.get(3);
+						session = true;
+					}
+					else if(pureResponse.equals("NOK")) {
+						System.out.println("Wrong Username or Password!");
+					}
 					return;
 					
 				}
@@ -503,6 +517,12 @@ public class User {
 		}
 	}
 	
+	public void Logout()
+	{
+		session = false;
+		token = null;
+		encryption.setKeyPaths("", "");
+	}
 	//Helpers
 	private String getUUID(){
 		return UUID.randomUUID().toString();
@@ -583,6 +603,15 @@ public class User {
 						}
 						break;
 	
+					case "logout":
+						if(parsedInput.length == 1) {
+							g.Logout();
+						}
+						else {
+							System.out.println("Unrecognized login command");
+						}
+						break;
+	
 					case "register":
 	
 						if(parsedInput.length == 5) {
@@ -616,6 +645,8 @@ public class User {
 								+ ">> request deviceName -c command");
 						System.out.println("login - used to start a session on the gateway\n"
 								+ ">> login username password [authenticationString]");
+						System.out.println("logout - used to end your session\n"
+								+ ">> logout");
 						System.out.println("register - [ADMIN ONLY]register a new user in the network\n"
 								+ ">> register AdminUsername AdminPassword username password");
 						System.out.println("delete - [AMIN ONLY]delete a user from the network\n"
