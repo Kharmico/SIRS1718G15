@@ -243,7 +243,6 @@ public class User {
 			String deviceName = new String(encryption.decrypt(byteArray.get(0)), UTF8);
 			String deviceStatus = new String(encryption.decrypt(byteArray.get(1)), UTF8);
 			String deviceType = new String(encryption.decrypt(byteArray.get(2)), UTF8);
-			
 			pureResponse.add(new ArrayList<String>(Arrays.asList(deviceName, deviceStatus, deviceType)));
 		}
 		

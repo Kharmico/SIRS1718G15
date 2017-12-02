@@ -7,9 +7,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.Key;
 import java.security.SignatureException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +47,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		encUtil.generateKeys("gateway");
 		user = new User("admin", "admin", "ADMIN");
 		user.getEncUtils().setKeyPaths("keys/adminUserPublicKey.key", "");
+		setDevicesTestingPurposes();
 	}
 
 	//GatewayController Endpoints
@@ -52,7 +56,6 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] authCode, byte[] nonce, byte[] signature, byte[] token) {
 		byte[] dec_nonce = encUtil.decrypt(nonce);
 		try {
-			//TODO: SAVE AUTHENTICATION CODE FOR USER VERIFICATION ON FIRST LOGIN!!!
 			// nonce%timestamp
 			String pure_nonce = new String(dec_nonce, UTF8);
 			String[] strings_nonce = pure_nonce.split("%");
@@ -68,7 +71,8 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			String passwordToCheck = new String(encUtil.decrypt(password), UTF8);
 			String adminUserToCheck = new String(encUtil.decrypt(adminUsername), UTF8);
 			String adminPassToCheck = new String(encUtil.decrypt(adminPassword), UTF8);
-			String dataToCheck = adminUserToCheck + adminPassToCheck + usernameToCheck + passwordToCheck + pure_nonce;
+			String pureAuthCode = new String(encUtil.decrypt(authCode), UTF8);
+			String dataToCheck = adminUserToCheck + adminPassToCheck + usernameToCheck + passwordToCheck + pureAuthCode + pure_nonce;
 			
 			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
 			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
@@ -83,7 +87,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				return answerRequest("INVALID_TOKEN");
 			}
 			
-			// TODO: Should check if User already exists
+			// TODO: Should check if User already exists (Fully implemented when there's a list of various users)
 			System.out.println("BEFORE ADMIN CREDENTIALS CHECKING!!!\n" /*+ usernameToCheck + " " + passwordToCheck + " " + user.getUsername() + " " + user.getPassword()*/);
 			if(!(adminUserToCheck.equals(user.getUsername()) && adminPassToCheck.equals(user.getPassword())) && reg_user == null) {
 				System.out.println("WRONG REGISTER ATTEMPT: LOGIN CRAP VERIFICATION!!!");
@@ -91,7 +95,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			nonceList.add(pure_nonce);
-			reg_user = new User(usernameToCheck, passwordToCheck, "REGULAR");
+			reg_user = new User(usernameToCheck, passwordToCheck, "REGULAR", pureAuthCode);
 			return answerRequest("OK");
 			
 		} catch (UnsupportedEncodingException e) {
@@ -300,8 +304,8 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			//TODO: Get this done right!!!
 			//Idea is to send command to the device!!!
 			nonceList.add(pure_nonce);
-			Helper deviceCon = devConnections.get(deviceToCheck);
-			deviceCon.getDeviceState();
+//			Helper deviceCon = devConnections.get(deviceToCheck);
+//			deviceCon.getDeviceState();
 			return answerRequest("Command_Sent");
 			
 		} catch (UnsupportedEncodingException e) {
@@ -319,7 +323,6 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	public List<byte[]> ReplenishLogin(byte[] userPublicKey, byte[] username, byte[] password, byte[] authString, byte[] nonce, byte[] signature) {
 		byte[] dec_nonce = encUtil.decrypt(nonce);
 		try {
-			//TODO: CHECK AUTHENTICATION CODE!!!
 			// nonce%timestamp
 			String pure_nonce = new String(dec_nonce, UTF8);
 			String[] strings_nonce = pure_nonce.split("%");
@@ -354,7 +357,9 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			nonceList.add(pure_nonce);
-			String token = user.generateToken();
+			Key pubKey = encUtil.byteArrayToPubKey(encUtil.base64Decoder(userPublicKey));
+			reg_user.getEncUtils().setPublicKey(pubKey, usernameToCheck);
+			String token = reg_user.generateToken();
 			return answerRequest("OK", token);
 			
 		} catch (UnsupportedEncodingException e) {
@@ -483,8 +488,6 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	
 	//------------------------------------ PRIVATE AUXILIARY FUNCTIONS ------------------------------------------------//
 	
-	//TODO: Be sure to sign everything that needs to be signed!!!
-	
 	private List<byte[]> answerRequest(List<String> reqResponse) throws UnsupportedEncodingException, SignatureException {
 		String timestamp = DateUtil.getTimestamp();
 		String uuid = UUID.randomUUID().toString();
@@ -504,19 +507,26 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		
 		return answerRequest;
 	}
-	
-	//Need to differentiate these 2... Think think...
-	
+
 	private List<ArrayList<byte[]>> answerRequestDevs(List<Device> reqResponse) throws UnsupportedEncodingException, SignatureException {
 		String timestamp = DateUtil.getTimestamp();
 		String uuid = UUID.randomUUID().toString();
 		String pureNounce = uuid + "%" + timestamp;
-		String pureSignature = reqResponse.toString().concat(pureNounce);
-		
+		String pureSignature = "";
 		byte[] sigToSend = null;
+		byte[] nounceToSend = null;
+		List<ArrayList<String>> pureRespDevs = new ArrayList<ArrayList<String>>();
+		
+		for(Device device : reqResponse) {
+			String deviceName = device.getName();
+			String deviceStatus = device.getStatus();
+			String deviceType = device.getType();
+			pureRespDevs.add(new ArrayList<String>(Arrays.asList(deviceName, deviceStatus, deviceType)));
+		}
+		
+		pureSignature = pureRespDevs.toString().concat(pureNounce);
 		sigToSend = encUtil.generateSignature(pureSignature.getBytes(UTF8));
-
-		byte[] nounceToSend = user.getEncUtils().encrypt(pureNounce.getBytes(UTF8));
+		nounceToSend = user.getEncUtils().encrypt(pureNounce.getBytes(UTF8));
 		
 		ArrayList<byte[]> answerRequest = new ArrayList<byte[]>();
 		answerRequest.add(nounceToSend);
@@ -578,4 +588,23 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		return answerRequest;
 	}
 	
+	
+	private void setDevicesTestingPurposes(){
+		Device devs = new Device("lampada", "ligado", "lampada");
+		Device devs2 = new Device("frigo", "ligado", "frigorifico");
+
+		ArrayList<String> devsCmds = new ArrayList<String>();
+		ArrayList<String> devs2Cmds = new ArrayList<String>();
+		
+		devsCmds.add("TURN_ON");
+		devsCmds.add("TURN_OFF");
+		devs2Cmds.add("CHECK_TEMP");
+		devs2Cmds.add("CHECK_SCHEDULE");
+		devs2Cmds.add("CHECK_POWER");
+		
+		devs.setCommands(devsCmds);
+		devs2.setCommands(devs2Cmds);
+		devices.add(devs);
+		devices.add(devs2);
+	}
 }

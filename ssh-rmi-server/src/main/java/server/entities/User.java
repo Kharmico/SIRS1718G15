@@ -25,14 +25,23 @@ public class User {
 		this.pubKey = null;
 	}
 	
-	public User(String username, String password, String type, Key pubKey){
+	public User(String username, String password, String type, String authCode){
 		this.username = username;
 		this.setPassword(password);
 		this.type = type;
+		this.authCode = authCode;
 		this.encUtils = new EncryptionUtil();
-		encUtils.setPublicKey(pubKey, username+"User");
-		this.pubKey = this.encUtils.getPublicKey();
+		this.pubKey = null;
 	}
+	
+//	public User(String username, String password, String type, Key pubKey){
+//		this.username = username;
+//		this.setPassword(password);
+//		this.type = type;
+//		this.encUtils = new EncryptionUtil();
+//		encUtils.setPublicKey(pubKey, username+"User");
+//		this.pubKey = this.encUtils.getPublicKey();
+//	}
 	
 	public String getUsername() {
 		return username;
