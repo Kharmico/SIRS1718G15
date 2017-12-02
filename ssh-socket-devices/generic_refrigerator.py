@@ -3,15 +3,20 @@ import _thread
 import os
 import base64
 import time, threading
-from sys import getsizeof
+from sys import getsizeof, argv
 from random import randint
 from Crypto.Cipher import AES
 from Crypto import Random
 from Crypto.Hash import HMAC, SHA
 from hashlib import sha1
 
+
+
 host = ''
 port = 0
+
+if (len(argv) == 2):
+    port = int(argv[1])
 
 GateWaySocket = ''
 GateWaySocketListen = ''
@@ -34,9 +39,14 @@ pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * \
 unpad = lambda s: s[:-ord(s[len(s) - 1:])]
 
 def periodicSend(message, socket):
-	socket.sendall(bytes(message, 'utf-8')) 
-	#print(message + time.ctime())
-	threading.Timer(1, periodicSend, [message,socket]).start()
+    #
+    if(type(message) == bytes):
+        print(message.decode("utf-8"))
+        socket.sendall(message)
+    else:
+        socket.sendall(bytes(message, 'utf-8'))
+    #print(message + time.ctime())
+    threading.Timer(1, periodicSend, [message,socket]).start()
 
 def generateFactoryKey():
      key = os.urandom(16)			#128 bits
@@ -81,16 +91,14 @@ def GETSTATUS():
 
 def REPEAT(dataMessage):
     reply = dataMessage[1]
-    print("CHEGUEI AO ZENO")
-    c,iv = encryptdata(dataMessage, factoryKey)
-    print("CHEGUEI AO ASDASD")
-    h = Hmac_data(dataMessage, hmac_key)
-    print("CHEGUEI AO INFERNO")
-    print([c,h])
-    cry = getCryptogramB64([c,h,iv])
-    print(str(cry))
     return reply
 
+def testEnc(dataMessage, secretkey, hmac_key):
+    c,iv = encryptdata(dataMessage, factoryKey)
+    h = Hmac_data(dataMessage, hmac_key)
+    cry = getCryptogramB64([c,h,iv])
+    return cry
+    
 def switchState():
     global curState 
     curState = curState + 1 % len(state)
@@ -109,7 +117,6 @@ def encryption(privateInfo, secretkey):         # Send the reply back to the cli
 	print ('encryption key:'), secretkey
 	
 	cipher = AES.new(secretkey) 
-	
 	encoded = EncodeAES(cipher, privateInfo) 
 	print ('Encrypted string:'), encoded
 	return encoded
@@ -181,8 +188,9 @@ def dataTransfer(conn, s):
             GateWaySocketListen.listen(1)
             GateWaySocketSendCmds, address = GateWaySocketListen.accept()
             print("accepted GateWaySocketListen connecion")
-            #periodicSend("boi\n",GateWaySocketSendCmds)
-            
+            #print(testEnc("Ola", factoryKey, hmac_key ))
+            print(str(base64.b64encode(testEnc("Ola", factoryKey, hmac_key ) )))
+            periodicSend(base64.b64encode(testEnc("Ola", factoryKey, hmac_key )),GateWaySocketSendCmds)
         else:
             reply = 'Unknown Command'
         # Send the reply back to the client
