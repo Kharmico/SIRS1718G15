@@ -49,6 +49,7 @@ public class User {
 	public User(GatewayService stub) throws RemoteException {
 		gateway = stub;
 		token = null;
+		session = false;
 		
 		encryption = new EncryptionUtil("keys/adminUserPublicKey.key","keys/adminUserPrivateKey.key");
 		svEncryption = new EncryptionUtil();
@@ -405,6 +406,11 @@ public class User {
 	}
 
 	public void Login(String username, String password, String authString) throws RemoteException, UnsupportedEncodingException {
+		if(session && token != null) {
+			System.out.println("You have an active session!");
+			return;
+		}
+		
 
 		encryption.setKeyPaths("keys/"+username+"UserPublicKey.key", "keys/"+username+"UserPrivateKey.key");
 		
@@ -426,7 +432,7 @@ public class User {
 		
 		try {
 			signature = encryption.generateSignature(pureSignature.getBytes(UTF8));
-		} catch (SignatureException e) {
+		} catch (Exception e) {
 			System.out.println("[ERROR] Couldn't generate signature");
 		}
 
