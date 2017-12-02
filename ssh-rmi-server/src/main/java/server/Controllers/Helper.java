@@ -55,28 +55,23 @@ public class Helper extends Thread{
     	
         //Read input and process here
     	//pollMsgToSend("GETSTATUS");pollMsgToSend("SWITCH");pollMsgToSend("GETSTATUS");
-    	int mCnt = 0;
     	while(true){
     		
     		try {
-    			
-//    			String message = msgToSend.take();
-//    			out.print(message);
-//    			System.out.println("Mensagem n" +(mCnt++) +" enviada");
-    			
+   			
     			byte[] bytes = new byte[1024];
     			
-				/*int i =*/ INin.read(bytes);
+				INin.read(bytes);
 				String rcvdMessage = new String(bytes, "UTF-8").trim();
 				System.out.println(rcvdMessage);
 //				//if(i > 0) System.out.println(state.trim());
 				
-				Thread.sleep(3000);		// Each 3 seconds, polls the device
+				//Thread.sleep(3000);		// Each 3 seconds, polls the device
 				
 			}/*catch(SocketException e){
 				// When the connection closes
 				System.out.println("TODO: DEVICE CONN FAIL");
-			}*/catch (IOException | InterruptedException e) {
+			}*/catch (IOException /*| InterruptedException */ e) {
 				e.printStackTrace();
 				try {
 					Thread.sleep(1000);

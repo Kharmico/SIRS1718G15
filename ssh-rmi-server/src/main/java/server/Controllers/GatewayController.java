@@ -456,7 +456,6 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 							continue;
 						};
 						String devPort = new String(data, "UTF-8").trim().split(":")[1] ;
-						String socketHost = connection.getInetAddress().getHostName();
 						Helper con = new Helper(connection, Integer.parseInt(devPort)); /* call a nanny to take
 	     	                                                            care of it */
 						devConnections.put(deviceName, con); /* make++ sure you keep a ref to it, just in case */
