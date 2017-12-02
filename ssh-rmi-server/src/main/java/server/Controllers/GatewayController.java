@@ -296,17 +296,17 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				return answerRequest("INVALID_TOKEN");
 			}
 			
-			if(!devConnections.containsKey(deviceToCheck)) {
+			/*if(!devConnections.containsKey(deviceToCheck)) {
 				System.out.println("WRONG SENDCMD: DEVICE DOES NOT EXIST");
 				return answerRequest("DEVICE_ERROR");
-			}
+			}*/
 			
 			//TODO: Get this done right!!!
 			//Idea is to send command to the device!!!
 			nonceList.add(pure_nonce);
 //			Helper deviceCon = devConnections.get(deviceToCheck);
 //			deviceCon.getDeviceState();
-			return answerRequest("Command_Sent");
+			return answerRequest("OK");
 			
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
@@ -526,6 +526,9 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		pureSignature = pureRespDevs.toString().concat(pureNounce);
 		sigToSend = encUtil.generateSignature(pureSignature.getBytes(UTF8));
 		nounceToSend = user.getEncUtils().encrypt(pureNounce.getBytes(UTF8));
+
+		System.out.println(pureRespDevs.toString());
+		
 		
 		ArrayList<byte[]> answerRequest = new ArrayList<byte[]>();
 		answerRequest.add(nounceToSend);
