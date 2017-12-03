@@ -3,12 +3,20 @@ import _thread
 import os
 import base64
 import time, threading
-from sys import getsizeof
+from sys import getsizeof, argv
 from random import randint
 from Crypto.Cipher import AES
+from Crypto import Random
+from Crypto.Hash import HMAC, SHA
+from hashlib import sha1
+
+
 
 host = ''
 port = 0
+
+if (len(argv) == 2):
+    port = int(argv[1])
 
 GateWaySocket = ''
 GateWaySocketListen = ''
@@ -21,11 +29,24 @@ myName = "Refrigerator " + str(randint(0,10))
 
 factoryKey = ''
 base64FactoryKey = ''
+hmac_key = ''
+
+BLOCK_SIZE = 16  # Bytes for AES encryption
+
+pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * \
+                    chr(BLOCK_SIZE - len(s) % BLOCK_SIZE)
+                
+unpad = lambda s: s[:-ord(s[len(s) - 1:])]
 
 def periodicSend(message, socket):
-	socket.sendall(bytes(message, 'utf-8')) 
-	#print(message + time.ctime())
-	threading.Timer(1, periodicSend, [message,socket]).start()
+    #
+    if(type(message) == bytes):
+        print(message.decode("utf-8"))
+        socket.sendall(message)
+    else:
+        socket.sendall(bytes(message, 'utf-8'))
+    #print(message + time.ctime())
+    threading.Timer(1, periodicSend, [message,socket]).start()
 
 def generateFactoryKey():
      key = os.urandom(16)			#128 bits
@@ -33,7 +54,8 @@ def generateFactoryKey():
      print("secret key:" + str(key) + "\nbase64 secret key:" + str(encodedkey))
      decodedkey = base64.b64decode(encodedkey)
      print("decoded base64 secret key:" + str(decodedkey))
-     return key, encodedkey 
+     hmac_key = sha1(encodedkey).hexdigest().encode()
+     return key, encodedkey,hmac_key 
 
 def setupGatewayServer():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -71,13 +93,20 @@ def REPEAT(dataMessage):
     reply = dataMessage[1]
     return reply
 
+def testEnc(dataMessage, secretkey, hmac_key):
+    c,iv = encryptdata(dataMessage, factoryKey)
+    h = Hmac_data(dataMessage, hmac_key)
+    cry = getCryptogramB64([c,h,iv])
+    return cry
+    
 def switchState():
     global curState 
     curState = curState + 1 % len(state)
     reply = "The "+ myName +" state has been switched!"
     return reply
 
-def encryption(privateInfo, secretkey): 
+def encryption(privateInfo, secretkey):         # Send the reply back to the client
+
 	BLOCK_SIZE = 16 
 	PADDING ='{' 
 	
@@ -88,10 +117,28 @@ def encryption(privateInfo, secretkey):
 	print ('encryption key:'), secretkey
 	
 	cipher = AES.new(secretkey) 
-	
 	encoded = EncodeAES(cipher, privateInfo) 
 	print ('Encrypted string:'), encoded
 	return encoded
+
+def encryptdata(data, secretkey):
+    
+                
+    iv =  Random.new().read(AES.block_size)
+    cipher = AES.new(factoryKey, AES.MODE_CBC, iv)
+    
+    cypherpart = cipher.encrypt(pad(data))
+    
+    return cypherpart,iv
+    
+def Hmac_data(data, hkey):
+    
+    a = HMAC.new(hkey, pad(data).encode(), SHA).digest()
+    return a
+
+def getCryptogramB64(data):
+    cyphertext = data[0] + ":".encode() + data[1] + ":".encode() + data[2]
+    return cyphertext
 
 def dataTransfer(conn, s):
     global GateWaySocket
@@ -141,12 +188,13 @@ def dataTransfer(conn, s):
             GateWaySocketListen.listen(1)
             GateWaySocketSendCmds, address = GateWaySocketListen.accept()
             print("accepted GateWaySocketListen connecion")
-            #periodicSend("boi\n",GateWaySocketSendCmds)
-            
+            #print(testEnc("Ola", factoryKey, hmac_key ))
+            print(str(base64.b64encode(testEnc("Ola", factoryKey, hmac_key ) )))
+            periodicSend(base64.b64encode(testEnc("Ola", factoryKey, hmac_key )),GateWaySocketSendCmds)
         else:
             reply = 'Unknown Command'
         # Send the reply back to the client
-        conn.sendall(bytes(reply, 'utf-8')) 
+        conn.sendall(bytes (reply, 'utf-8')) 
         print("Data has been sent!")
     conn.close()
     
@@ -189,7 +237,7 @@ s = setupServer()
 
 while True:
     try:
-        factoryKey, base64FactoryKey = generateFactoryKey()
+        factoryKey, base64FactoryKey,hmac_key = generateFactoryKey()
         conn = setupConnection()
         GateWaySocketListen = setupGatewayServer()
         dataTransfer(conn, s)

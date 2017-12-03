@@ -362,21 +362,21 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				return answerRequest("WRONGSIG", user);
 			}
 			
+			List<String> devCmds = new ArrayList<String>();
+			for(Device dev : devices) {
+				if(dev.getName().equals(deviceToCheck))
+					devCmds = dev.getCommands();
+			}
+			
+			if(devCmds.isEmpty()) {
+				System.out.println("WRONG DEVICECMD ATTEMPT: DEVICE VERIFICATION!!!");
+				return answerRequest("NODEV", user);
+			}
+			
 			if(!devConnections.containsKey(deviceToCheck)) {
 				System.out.println("WRONG SENDCMD: DEVICE DOES NOT EXIST");
 				return answerRequest("DEVICE_ERROR", user);
 			}
-			
-//			List<String> devCmds = new ArrayList<String>();
-//			for(Device dev : devices) {
-//				if(dev.getName().equals(deviceToCheck))
-//					devCmds = dev.getCommands();
-//			}
-//			
-//			if(devCmds.isEmpty()) {
-//				System.out.println("WRONG DEVICECMD ATTEMPT: DEVICE VERIFICATION!!!");
-//				return answerRequest("NODEV", user);
-//			}
 			
 			//TODO: Get this done right!!!
 			//Idea is to send command to the device!!!
@@ -620,6 +620,9 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		pureSignature = pureRespDevs.toString().concat(pureNounce);
 		sigToSend = encUtil.generateSignature(pureSignature.getBytes(UTF8));
 		nounceToSend = user.getEncUtils().encrypt(pureNounce.getBytes(UTF8));
+
+		System.out.println(pureRespDevs.toString());
+		
 		
 		ArrayList<byte[]> answerRequest = new ArrayList<byte[]>();
 		answerRequest.add(nounceToSend);
