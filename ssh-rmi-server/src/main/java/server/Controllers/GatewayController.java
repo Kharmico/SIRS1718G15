@@ -521,7 +521,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		return encUtil.base64Encoder(pubKeyGetter);
 	}
 
-	public List<byte[]> AcceptDevice(byte[] code, byte[] nonce, byte[] signature, byte[] token) throws RemoteException {
+	public List<byte[]> AcceptDevice(byte[] deviceName, byte[] code, byte[] nonce, byte[] signature, byte[] token) throws RemoteException {
 		// TODO Auto-generated method stub
 		return null;
 	}

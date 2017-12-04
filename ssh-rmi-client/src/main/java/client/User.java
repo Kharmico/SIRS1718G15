@@ -292,7 +292,7 @@ public class User {
 		}
 	}
 	
-	public void AcceptDevice(String code) throws UnsupportedEncodingException, RemoteException {
+	public void AcceptDevice(String deviceName, String code) throws UnsupportedEncodingException, RemoteException {
 		if(token == null) {
 			System.out.println("Login before doing an action!");
 			return;
@@ -306,7 +306,7 @@ public class User {
 		
 		//make signature
 		
-		String pureSignature = code + pureNounce;
+		String pureSignature = deviceName + code + pureNounce;
 		
 		byte[] signature = null;
 		try {
@@ -316,11 +316,12 @@ public class User {
 		}
 		
 		//encrypt
+		byte[] dName = svEncryption.encrypt(deviceName.getBytes(UTF8));
 		byte[] eCode = svEncryption.encrypt(code.getBytes(UTF8));
 		
 		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
 		
-		List<byte[]> response = gateway.GetDeviceCommands(eCode, nounce, signature, token);
+		List<byte[]> response = gateway.AcceptDevice(dName, eCode, nounce, signature, token);
 		
 		//decrypt response		
 		String pureResponse = new String(encryption.decrypt(response.get(2)), UTF8);
@@ -834,8 +835,8 @@ public class User {
 	
 					case "accept":
 	
-						if(parsedInput.length == 2) {
-							g.AcceptDevice(parsedInput[1]);
+						if(parsedInput.length == 3) {
+							g.AcceptDevice(parsedInput[1], parsedInput[2]);
 						}
 						else {
 							System.out.println("Unrecognized delete command");
@@ -864,7 +865,7 @@ public class User {
 						System.out.println("users - [ADMIN ONLY]lists existing users\n"
 								+ ">> users");
 						System.out.println("accept - [AMIN ONLY]accepts one device\n"
-								+ ">> accept code");
+								+ ">> accept deviceName code");
 						System.out.println("help - for existing commands\n"
 								+ ">> help");
 						System.out.println("exit - to exit the client program\n"
