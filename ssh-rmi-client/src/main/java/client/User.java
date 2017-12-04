@@ -1,5 +1,6 @@
 package client;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.rmi.*;
 import java.security.Key;
@@ -594,6 +595,11 @@ public class User {
 			return;
 		}
 		
+		File f = new File("keys/"+username+"UserPrivateKey.key");
+		if(!f.exists()) { 
+		    System.out.println("That user hasn't been registered on this system");
+		    return;
+		}
 
 		encryption.setKeyPaths("keys/"+username+"UserPublicKey.key", "keys/"+username+"UserPrivateKey.key");
 		
@@ -714,6 +720,7 @@ public class User {
 		session = false;
 		token = null;
 		encryption.setKeyPaths("", "");
+		System.out.println("You have been successfully logged out!");
 	}
 	//Helpers
 	private String getUUID(){
@@ -876,6 +883,7 @@ public class User {
 						System.out.println("Command not recognized");
 						break;
 				}
+				System.out.println("");
 				
 			}
 			
