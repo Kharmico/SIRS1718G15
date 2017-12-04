@@ -93,11 +93,6 @@ def REPEAT(dataMessage):
     reply = dataMessage[1]
     return reply
 
-def testEnc(dataMessage, secretkey, hmac_key):
-    c,iv = encryptdata(dataMessage, factoryKey)
-    h = Hmac_data(dataMessage, hmac_key)
-    cry = getCryptogramB64([c,h,iv])
-    return cry
     
 def switchState():
     global curState 
@@ -121,10 +116,9 @@ def encryption(privateInfo, secretkey):         # Send the reply back to the cli
 	print ('Encrypted string:'), encoded
 	return encoded
 
-def encryptdata(data, secretkey):
-    
-                
+def encryptdata(data, secretkey):     
     iv =  Random.new().read(AES.block_size)
+    print("iv:"+str(iv))
     cipher = AES.new(factoryKey, AES.MODE_CBC, iv)
     
     cypherpart = cipher.encrypt(pad(data))
@@ -136,9 +130,16 @@ def Hmac_data(data, hkey):
     a = HMAC.new(hkey, pad(data).encode(), SHA).digest()
     return a
 
-def getCryptogramB64(data):
-    cyphertext = data[0] + ":".encode() + data[1] + ":".encode() + data[2]
+def getCryptogram(data):
+    cyphertext = base64.b64encode(data[0]) + ":".encode() + base64.b64encode(data[1]) + ":".encode() + base64.b64encode(data[2])
+    print(str(cyphertext))
     return cyphertext
+
+def testEnc(dataMessage, secretkey, hmac_key):
+    c,iv = encryptdata(dataMessage, factoryKey)
+    h = Hmac_data(dataMessage, hmac_key)
+    cry = getCryptogram([c,h,iv])
+    return cry
 
 def dataTransfer(conn, s):
     global GateWaySocket
@@ -189,8 +190,8 @@ def dataTransfer(conn, s):
             GateWaySocketSendCmds, address = GateWaySocketListen.accept()
             print("accepted GateWaySocketListen connecion")
             #print(testEnc("Ola", factoryKey, hmac_key ))
-            print(str(base64.b64encode(testEnc("Ola", factoryKey, hmac_key ) )))
-            periodicSend(base64.b64encode(testEnc("Ola", factoryKey, hmac_key )),GateWaySocketSendCmds)
+            print(testEnc("Ola", factoryKey, hmac_key ))
+            periodicSend(testEnc("Ola", factoryKey, hmac_key ),GateWaySocketSendCmds)
         else:
             reply = 'Unknown Command'
         # Send the reply back to the client

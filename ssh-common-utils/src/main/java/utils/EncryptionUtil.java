@@ -7,6 +7,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 import java.io.*;
 import java.security.*;
@@ -25,8 +26,9 @@ public class EncryptionUtil {
     */
     private static final String ALGORITHM = "RSA";
     private static final String CIPHER = "RSA/ECB/PKCS1Padding";
-    private static final String HASH_ALGORITHM = "SHA-256";
+    private static final String HASH_ALGORITHM = "SHA-1";
     private static final String SIGNATURE_ALGORITHM = "SHA256withRSA";
+    private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
     private static final int KEY_SIZE = 1024;
 
     ObjectInputStream inputStream = null;
@@ -292,6 +294,40 @@ public class EncryptionUtil {
 
         return pubKey;
     }
+    
+    public byte[] hash(byte[] textToHash){
+        MessageDigest messageDigest = null;
+        byte[] hash = null;
+
+        try{
+            messageDigest = MessageDigest.getInstance(HASH_ALGORITHM);
+            messageDigest.update(textToHash);
+            hash = messageDigest.digest();
+        } catch (NoSuchAlgorithmException e) {
+            System.err.println("There's no such Hash Algorithm.");
+            e.printStackTrace();
+        }
+
+        return hash;
+    }
+
+	public String calculateHMAC(String data, String key)
+		throws SignatureException, NoSuchAlgorithmException, InvalidKeyException
+	{
+		SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), HMAC_SHA1_ALGORITHM);
+		Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
+		mac.init(signingKey);
+		return BufferUtil.toHexString(mac.doFinal(data.getBytes()));
+	}
+	
+	public String calculateHMAC(byte[] data, byte[] key)
+			throws SignatureException, NoSuchAlgorithmException, InvalidKeyException
+		{
+			SecretKeySpec signingKey = new SecretKeySpec(key, HMAC_SHA1_ALGORITHM);
+			Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
+			mac.init(signingKey);
+			return BufferUtil.toHexString(mac.doFinal(data));
+		}
 
     public byte[] generateSignature(byte[] dataToBeSigned) throws SignatureException {
         Signature rsaForSign = null;
@@ -341,6 +377,13 @@ public class EncryptionUtil {
     }
 
     public byte[] base64Decoder(byte[] toDecode){
+        byte[] response = Base64.getDecoder().decode(toDecode);
+
+        return response;
+    }
+    
+
+    public byte[] base64SDecoder(String toDecode){
         byte[] response = Base64.getDecoder().decode(toDecode);
 
         return response;

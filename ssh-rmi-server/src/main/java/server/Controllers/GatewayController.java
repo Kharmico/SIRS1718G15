@@ -14,7 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
@@ -37,6 +39,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	private ArrayList<String> nonceList = new ArrayList<String>();
 	private EncryptionUtil encUtil = new EncryptionUtil();
 	private List<User> users = new ArrayList<User>();
+	private Set<String> b64keys= new HashSet<String>();
 
 	// GatewayController Constructor
 	public GatewayController() throws RemoteException {
@@ -521,6 +524,20 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	public String registerNewDevice(){
 		return null;
 
+	}
+	
+	public void addKey(String key){
+		b64keys.add(key);
+	}
+	public boolean removeKey(String key){
+		boolean removed = false;
+		for(String k: b64keys) {
+			if (k.equals(key)){
+				b64keys.remove(key);
+				removed = true;
+			}
+		}
+		return removed;
 	}
 	public void startListeningDevices() throws IOException {
 		Thread t1 = new Thread(new Runnable() {

@@ -8,7 +8,10 @@ import java.io.DataInputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import utils.EncryptionUtil;
 
 public class Helper extends Thread{
 	private Socket socketOUT = null;
@@ -63,6 +66,15 @@ public class Helper extends Thread{
     			
 				INin.read(bytes);
 				String rcvdMessage = new String(bytes, "UTF-8").trim();
+				String cryptogram []=  rcvdMessage.split(":");
+				if(cryptogram.length!=3) {System.out.println("erro na mensagem"); continue;} 
+				
+				byte[] Message = new EncryptionUtil().base64SDecoder(cryptogram[0]);
+				byte[] Hmac = new EncryptionUtil().base64SDecoder(cryptogram[1]);
+				byte[] IV = new EncryptionUtil().base64SDecoder(cryptogram[2]);
+				//System.out.println(Message.length+":"+Hmac.length+":"+IV.length);
+				
+				//new EncryptionUtil().calculateHMAC(Message, key);
 				System.out.println(rcvdMessage);
 //				//if(i > 0) System.out.println(state.trim());
 				
