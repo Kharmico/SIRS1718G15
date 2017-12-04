@@ -39,7 +39,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	private ArrayList<String> nonceList = new ArrayList<String>();
 	private EncryptionUtil encUtil = new EncryptionUtil();
 	private List<User> users = new ArrayList<User>();
-	private Set<String> b64keys= new HashSet<String>();
+	public Set<String> b64keys= new HashSet<String>();
 
 	// GatewayController Constructor
 	public GatewayController() throws RemoteException {
@@ -549,6 +549,9 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		}
 		return removed;
 	}
+	
+	
+	
 	public void startListeningDevices() throws IOException {
 		Thread t1 = new Thread(new Runnable() {
 			public void run() {
@@ -577,7 +580,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 							continue;
 						};
 						String devPort = new String(data, "UTF-8").trim().split(":")[1] ;
-						Helper con = new Helper(connection, Integer.parseInt(devPort)); /* call a nanny to take
+						Helper con = new Helper(connection, Integer.parseInt(devPort),b64keys); /* call a nanny to take
 	     	                                                            care of it */
 						devConnections.put(deviceName, con); /* make++ sure you keep a ref to it, just in case */
 						con.start();	/* this code is executed when a client connects... */

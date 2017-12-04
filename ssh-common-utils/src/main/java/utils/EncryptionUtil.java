@@ -7,6 +7,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import java.io.*;
@@ -320,6 +321,42 @@ public class EncryptionUtil {
 		return BufferUtil.toHexString(mac.doFinal(data.getBytes()));
 	}
 	
+	public String decryptAES(String key, byte[] initVector, String encrypted) {
+        try {
+            IvParameterSpec iv = new IvParameterSpec(initVector);
+            SecretKeySpec skeySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
+
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, iv);
+
+            byte[] original = cipher.doFinal(base64SDecoder(encrypted));
+
+            return new String(original);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return null;
+    }
+	
+	public String decryptAES(byte[] key, byte[] initVector, String encrypted) {
+        try {
+            IvParameterSpec iv = new IvParameterSpec(initVector);
+            SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+
+            Cipher cipher = Cipher.getInstance("AES/CBC/NOPADDING");
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, iv);
+
+            byte[] original = cipher.doFinal(base64SDecoder(encrypted));
+
+            return new String(original);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return null;
+    }
+	
 	public String calculateHMAC(byte[] data, byte[] key)
 			throws SignatureException, NoSuchAlgorithmException, InvalidKeyException
 		{
@@ -328,6 +365,17 @@ public class EncryptionUtil {
 			mac.init(signingKey);
 			return BufferUtil.toHexString(mac.doFinal(data));
 		}
+	
+	public byte[] toSHA1(byte[] convertme) {
+	    MessageDigest md = null;
+	    try {
+	        md = MessageDigest.getInstance("SHA-1");
+	    }
+	    catch(NoSuchAlgorithmException e) {
+	        e.printStackTrace();
+	    } 
+	    return (md.digest(convertme));
+	}
 
     public byte[] generateSignature(byte[] dataToBeSigned) throws SignatureException {
         Signature rsaForSign = null;

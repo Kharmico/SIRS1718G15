@@ -9,8 +9,10 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import utils.BufferUtil;
 import utils.EncryptionUtil;
 
 public class Helper extends Thread{
@@ -23,7 +25,12 @@ public class Helper extends Thread{
 	private PrintStream INout= null;
 	
 	private volatile String deviceState = "";
+	private String deviceKey ="";
+	private String sessionKey="";
+	byte[] Hmac_key;
 	private LinkedBlockingQueue <String> msgToSend = new LinkedBlockingQueue <String>();
+	
+	private Set<String> keys;
 	
     public String getDeviceState() {
     	OUTout.print("GETSTATUS");
@@ -37,14 +44,15 @@ public class Helper extends Thread{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-    	return "";
+    	return "Not able to get state of device";
 		
 	}
 
-	public Helper(Socket socket, int deviceListenPort) throws UnknownHostException, IOException {
+	public Helper(Socket socket, int deviceListenPort, Set<String> keys) throws UnknownHostException, IOException {
 
         super("Helper");
         this.socketOUT = socket;
+        this.keys = keys;
         
         socketIN = new Socket(socket.getInetAddress().getHostAddress(), deviceListenPort);
         
@@ -55,7 +63,9 @@ public class Helper extends Thread{
     }
 
     public void run(){
+    	EncryptionUtil enc = new EncryptionUtil();
     	
+
         //Read input and process here
     	//pollMsgToSend("GETSTATUS");pollMsgToSend("SWITCH");pollMsgToSend("GETSTATUS");
     	while(true){
@@ -67,12 +77,29 @@ public class Helper extends Thread{
 				INin.read(bytes);
 				String rcvdMessage = new String(bytes, "UTF-8").trim();
 				String cryptogram []=  rcvdMessage.split(":");
-				if(cryptogram.length!=3) {System.out.println("erro na mensagem"); continue;} 
 				
-				byte[] Message = new EncryptionUtil().base64SDecoder(cryptogram[0]);
-				byte[] Hmac = new EncryptionUtil().base64SDecoder(cryptogram[1]);
-				byte[] IV = new EncryptionUtil().base64SDecoder(cryptogram[2]);
+				if(cryptogram.length!=3) {
+					System.out.println("erro 1 na mensagem"); 
+					throw new IOException();
+				} 
+				
+				byte[] Message = enc.base64SDecoder(cryptogram[0]);
+				byte[] Hmac =    enc.base64SDecoder(cryptogram[1]);
+				byte[] IV = 	 enc.base64SDecoder(cryptogram[2]);
 				//System.out.println(Message.length+":"+Hmac.length+":"+IV.length);
+				String m = null;
+				for(String key : keys){
+					byte[] decryptkey = /*enc.toSHA1*/(enc.base64SDecoder(key));
+					
+					System.out.println(BufferUtil.toHexString(decryptkey));
+					m = "\""+ enc.decryptAES(decryptkey, IV, cryptogram[0].trim()) + "\"";
+					if(m != null){
+						System.out.println(m);
+						deviceKey= key;
+						break;
+					}
+				}
+				if (m == null)	System.out.println("erro 2 na mensagem");
 				
 				//new EncryptionUtil().calculateHMAC(Message, key);
 				System.out.println(rcvdMessage);

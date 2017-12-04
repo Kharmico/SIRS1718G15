@@ -89,6 +89,14 @@ public class GatewayApplication {
 					String command[] = cmd.split(" ");
 					stub.addKey(command[1]);
 				}
+				else if(cmd.contains("listkeys")){
+					for(String s: stub.b64keys)
+						System.out.println(s);
+				}
+				else if(cmd.contains("removekey")){
+					String command[] = cmd.split(" ");
+					stub.removeKey(command[1]);
+				}
 				else{
 					System.out.println("Unrecognizable command");
 					break;

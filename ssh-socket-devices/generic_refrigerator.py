@@ -118,7 +118,6 @@ def encryption(privateInfo, secretkey):         # Send the reply back to the cli
 
 def encryptdata(data, secretkey):     
     iv =  Random.new().read(AES.block_size)
-    print("iv:"+str(iv))
     cipher = AES.new(factoryKey, AES.MODE_CBC, iv)
     
     cypherpart = cipher.encrypt(pad(data))
