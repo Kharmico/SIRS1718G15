@@ -520,6 +520,16 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		byte[] pubKeyGetter = encUtil.pubKeyToByteArray();
 		return encUtil.base64Encoder(pubKeyGetter);
 	}
+
+	public List<byte[]> AcceptDevice(byte[] code, byte[] nonce, byte[] signature, byte[] token) throws RemoteException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public List<ArrayList<byte[]>> GetUsers(byte[] nonce, byte[] signature, byte[] token) throws RemoteException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 	public String registerNewDevice(){
 		return null;
