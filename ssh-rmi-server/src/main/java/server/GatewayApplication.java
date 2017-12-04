@@ -85,6 +85,10 @@ public class GatewayApplication {
 				else if(cmd.equals("exit")){
 					System.exit(MAX_PRIORITY);
 				}
+				else if(cmd.contains("addkey")){
+					String command[] = cmd.split(" ");
+					stub.addKey(command[1]);
+				}
 				else{
 					System.out.println("Unrecognizable command");
 					break;
