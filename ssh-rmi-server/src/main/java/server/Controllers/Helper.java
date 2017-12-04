@@ -9,6 +9,9 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -79,7 +82,7 @@ public class Helper extends Thread{
 				String cryptogram []=  rcvdMessage.split(":");
 				
 				if(cryptogram.length!=3) {
-					System.out.println("erro 1 na mensagem"); 
+					System.out.println("erro 3 na mensagem"); 
 					throw new IOException();
 				} 
 				
@@ -89,17 +92,27 @@ public class Helper extends Thread{
 				//System.out.println(Message.length+":"+Hmac.length+":"+IV.length);
 				String m = null;
 				for(String key : keys){
-					byte[] decryptkey = /*enc.toSHA1*/(enc.base64SDecoder(key));
+					byte[] decryptkey = (enc.base64SDecoder(key));
 					
 					System.out.println(BufferUtil.toHexString(decryptkey));
-					m = "\""+ enc.decryptAES(decryptkey, IV, cryptogram[0].trim()) + "\"";
+					m = "\""+ enc.decryptAES(decryptkey, IV, cryptogram[0]) + "\"";
 					if(m != null){
 						System.out.println(m);
 						deviceKey= key;
+						Hmac_key = enc.toSHA1(enc.base64SDecoder(key));
+						System.out.println("HMAC KEY:" + BufferUtil.toHexString(Hmac_key));
+						
+						try {
+							System.out.println("Calculated HMac:"+ enc.calculateHMAC(
+														enc.decryptAESwithPadding(decryptkey, IV, cryptogram[0] ).getBytes(), Hmac_key));
+							System.out.println("Message HMac:"+ BufferUtil.toHexString(Hmac));
+						} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
+							e.getMessage();
+						}
 						break;
 					}
 				}
-				if (m == null)	System.out.println("erro 2 na mensagem");
+				if (m == null)	System.out.println("erro 4 na mensagem");
 				
 				//new EncryptionUtil().calculateHMAC(Message, key);
 				System.out.println(rcvdMessage);
@@ -133,7 +146,60 @@ public class Helper extends Thread{
 		}
     }
     
-    public void login(){
+    public void login() throws IOException{
+    	EncryptionUtil enc = new EncryptionUtil();
+   
+    		byte[] bytes = new byte[1024];
+			
+			INin.read(bytes);
+			String rcvdMessage = new String(bytes, "UTF-8").trim();
+			String cryptogram []=  rcvdMessage.split(":");
+			
+			String msg = processMessage(cryptogram);
+			System.out.println(msg);
+			
     	
+    }
+
+    public String processMessage(String[] cryptogram) throws IOException{
+    	EncryptionUtil enc = new EncryptionUtil();
+    	
+    	String msg = null;
+    	
+    	if(cryptogram.length!=3) {
+			System.out.println("erro 1 na mensagem"); 
+			throw new IOException();
+		} 
+    	
+		byte[] Hmac =    enc.base64SDecoder(cryptogram[1]);
+		byte[] IV = 	 enc.base64SDecoder(cryptogram[2]);
+		//System.out.println(Message.length+":"+Hmac.length+":"+IV.length);
+		String m = null;
+		for(String key : keys){
+			byte[] decryptkey = (enc.base64SDecoder(key));
+			
+			System.out.println(BufferUtil.toHexString(decryptkey));
+			m = enc.decryptAES(decryptkey, IV, cryptogram[0]);
+			if(m != null){
+				System.out.println(m);
+				deviceKey= key;
+				Hmac_key = enc.toSHA1(enc.base64SDecoder(key));
+				System.out.println("HMAC KEY:" + BufferUtil.toHexString(Hmac_key));
+				
+				try {
+					String calculatedMac = enc.calculateHMAC(enc.decryptAESwithPadding(decryptkey, IV, cryptogram[0] ).getBytes(), Hmac_key);
+					
+					if(calculatedMac.equals(BufferUtil.toHexString(Hmac)))
+						msg = m;
+				} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
+					e.getMessage();
+				}
+				break;
+			}
+		}
+		if (m == null)	System.out.println("erro 2 na mensagem");
+		
+		return msg;
+	
     }
 }

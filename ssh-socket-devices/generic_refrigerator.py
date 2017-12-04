@@ -41,7 +41,7 @@ unpad = lambda s: s[:-ord(s[len(s) - 1:])]
 def periodicSend(message, socket):
     #
     if(type(message) == bytes):
-        print(message.decode("utf-8"))
+        #print(message.decode("utf-8"))
         socket.sendall(message)
     else:
         socket.sendall(bytes(message, 'utf-8'))
@@ -53,8 +53,8 @@ def generateFactoryKey():
      encodedkey = base64.b64encode(key)
      print("secret key:" + str(key) + "\nbase64 secret key:" + str(encodedkey))
      decodedkey = base64.b64decode(encodedkey)
-     print("decoded base64 secret key:" + str(decodedkey))
-     hmac_key = sha1(encodedkey).hexdigest().encode()
+     hmac_key = sha1(key).digest()
+     print("Hmac key["+str(getsizeof(hmac_key))+"]:" + str(hmac_key)+"\nbase64HMACKey:" + str(base64.b64encode(hmac_key)))
      return key, encodedkey,hmac_key 
 
 def setupGatewayServer():
@@ -120,26 +120,42 @@ def encryptdata(data, secretkey):
     iv =  Random.new().read(AES.block_size)
     cipher = AES.new(factoryKey, AES.MODE_CBC, iv)
     
-    cypherpart = cipher.encrypt(pad(data))
+    paddeddata = pad(data)
+    cypherpart = cipher.encrypt(paddeddata)
     
     return cypherpart,iv
     
 def Hmac_data(data, hkey):
-    
-    a = HMAC.new(hkey, pad(data).encode(), SHA).digest()
+    datatosend = pad(data).encode()
+    print("hmac'ing"+str(datatosend))
+    a = HMAC.new(hkey, datatosend, SHA).digest()
     return a
 
 def getCryptogram(data):
     cyphertext = base64.b64encode(data[0]) + ":".encode() + base64.b64encode(data[1]) + ":".encode() + base64.b64encode(data[2])
-    print(str(cyphertext))
+    #print(str(cyphertext))
+    print("Hmac Message: "+ str(base64.b64encode(data[1])))
     return cyphertext
 
 def testEnc(dataMessage, secretkey, hmac_key):
-    c,iv = encryptdata(dataMessage, factoryKey)
+    #print("dataMessage:"+dataMessage+"\tsecretkey:"+str(secretkey)+"\thmac_key:"+str(hmac_key))
+    c,iv = encryptdata(dataMessage, secretkey)
     h = Hmac_data(dataMessage, hmac_key)
+    print (dataMessage)
+    #h = Hmac_data("123456789", "OLA".encode("utf-8"))
+    print(str(h))
     cry = getCryptogram([c,h,iv])
     return cry
 
+def login():
+    try:
+        auth1 = myName +","+GETSTATUS()+"," +"Fridge"
+        cryptogram = testEnc(auth1,factoryKey,hmac_key)
+        GateWaySocketSendCmds.sendall(bytes (cryptogram, 'utf-8')) 
+        
+    except Exception as inst:
+        print("login error:" + str(inst))
+        
 def dataTransfer(conn, s):
     global GateWaySocket
     # A big loop that sends/receives data until told not to.
@@ -188,9 +204,8 @@ def dataTransfer(conn, s):
             GateWaySocketListen.listen(1)
             GateWaySocketSendCmds, address = GateWaySocketListen.accept()
             print("accepted GateWaySocketListen connecion")
-            #print(testEnc("Ola", factoryKey, hmac_key ))
-            print(testEnc("Ola", factoryKey, hmac_key ))
-            periodicSend(testEnc("Ola", factoryKey, hmac_key ),GateWaySocketSendCmds)
+            #periodicSend(testEnc("123456789", factoryKey, hmac_key ),GateWaySocketSendCmds)
+            login()
         else:
             reply = 'Unknown Command'
         # Send the reply back to the client

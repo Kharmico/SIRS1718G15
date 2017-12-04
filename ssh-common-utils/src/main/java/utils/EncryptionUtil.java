@@ -326,11 +326,13 @@ public class EncryptionUtil {
             IvParameterSpec iv = new IvParameterSpec(initVector);
             SecretKeySpec skeySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
 
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+            Cipher cipher = Cipher.getInstance("AES/CBC/NOPADDING");
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, iv);
 
             byte[] original = cipher.doFinal(base64SDecoder(encrypted));
-
+            
+            original = BufferUtil.removePad(original);
+            
             return new String(original);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -340,6 +342,26 @@ public class EncryptionUtil {
     }
 	
 	public String decryptAES(byte[] key, byte[] initVector, String encrypted) {
+        try {
+            IvParameterSpec iv = new IvParameterSpec(initVector);
+            SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+
+            Cipher cipher = Cipher.getInstance("AES/CBC/NOPADDING");
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, iv);
+
+            byte[] original = cipher.doFinal(base64SDecoder(encrypted));
+            
+            original = BufferUtil.removePad(original);
+
+            return new String(original);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return null;
+    }
+	
+	public String decryptAESwithPadding(byte[] key, byte[] initVector, String encrypted) {
         try {
             IvParameterSpec iv = new IvParameterSpec(initVector);
             SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");

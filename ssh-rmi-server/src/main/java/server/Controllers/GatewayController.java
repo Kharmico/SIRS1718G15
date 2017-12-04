@@ -557,7 +557,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			public void run() {
 
 				while (true) { /* or some other condition you wish */
-					Socket connection;
+					Socket connection = null;
 					try {
 						System.out.println("Ready to accept another device...");
 						connection = registerSocket.accept(); /* will wait here */
@@ -580,14 +580,20 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 							continue;
 						};
 						String devPort = new String(data, "UTF-8").trim().split(":")[1] ;
-						Helper con = new Helper(connection, Integer.parseInt(devPort),b64keys); /* call a nanny to take
-	     	                                                            care of it */
-						devConnections.put(deviceName, con); /* make++ sure you keep a ref to it, just in case */
+						Helper con = new Helper(connection, Integer.parseInt(devPort),b64keys); 
+						con.login();
+						devConnections.put(deviceName, con);
 						con.start();	/* this code is executed when a client connects... */
 						/* tell nanny to get to work as an independent thread */
 
 
 					} catch (IOException e) {
+						try {
+							if(connection != null) 
+								connection.close();
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
 						e.printStackTrace();
 					} 
 				}
