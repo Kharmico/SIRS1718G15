@@ -29,6 +29,14 @@ import utils.MaintenanceUtil;
 public class User {
 	//Static
 	private static final String UTF8 = "UTF-8";
+	private static final String OK = "OK";
+	private static final String NOK = "NOK";
+	private static final String NOFRESH = "NOFRESH";
+	private static final String WRONGSIG = "WRONGSIG";
+	private static final String INVALID_TOKEN = "INVALID_TOKEN";
+	private static final String DELETE_ERROR = "DELETE_ERROR";
+	private static final String NODEV = "NODEV";
+	private static final String DEVICE_ERROR = "DEVICE_ERROR";
 	
 	//Encryption
 	private String gatewayPublicKeyPath;
@@ -39,14 +47,12 @@ public class User {
 	
 	private DateTime cleanSchedule = new DateTime().now();
 	
-	
-	
 	//Program
 	private GatewayService gateway;
 	private boolean session;
 	private byte[] token;
 	
-	//Methods
+	//Constructor
 	public User(GatewayService stub) throws RemoteException {
 		gateway = stub;
 		token = null;
@@ -66,6 +72,7 @@ public class User {
 		System.out.println("You can now communicate with the Server [Help for commands]");
 	}
 
+	//Methods
 	public void RegisterUser(String adminName, String adminPassword, String name, String password) throws RemoteException, UnsupportedEncodingException {
 		if(token == null) {
 			System.out.println("Login before doing an action!");
@@ -112,21 +119,21 @@ public class User {
 		
 		try {	
 			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
-				if(pureResponse.equals("OK")) {
+				if(pureResponse.equals(OK)) {
 					System.out.println("User succesfully registered");
 					System.out.println("Your new user should use this string to authenticate: " + pureAuthCode);
 					new EncryptionUtil().generateKeys(name + "User");
 				}
-				else if(pureResponse.equals("NOK")) {
+				else if(pureResponse.equals(NOK)) {
 					System.out.println("User could not be registered");
 				}
-				else if(pureResponse.equals("NOFRESH")) {
+				else if(pureResponse.equals(NOFRESH)) {
 					System.out.println("[WARNING] Your nonce could not be accepted");
 				}
-				else if(pureResponse.equals("WRONGSIG")) {
+				else if(pureResponse.equals(WRONGSIG)) {
 					System.out.println("[WARNING] Your signature could not be accepted");
 				}
-				else if(pureResponse.equals("INVALID_TOKEN")) {
+				else if(pureResponse.equals(INVALID_TOKEN)) {
 					System.out.println("Your session has ended");
 				}
 				else {
@@ -189,19 +196,19 @@ public class User {
 		
 		try {	
 			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
-				if(pureResponse.equals("OK")) {
+				if(pureResponse.equals(OK)) {
 					System.out.println("User succesfully deleted");
 				}
-				else if(pureResponse.equals("DELETE_ERROR")) {
+				else if(pureResponse.equals(DELETE_ERROR)) {
 					System.out.println("User could not be deleted");
 				}
-				else if(pureResponse.equals("NOFRESH")) {
+				else if(pureResponse.equals(NOFRESH)) {
 					System.out.println("[WARNING] Your nonce could not be accepted");
 				}
-				else if(pureResponse.equals("WRONGSIG")) {
+				else if(pureResponse.equals(WRONGSIG)) {
 					System.out.println("[WARNING] Your signature could not be accepted");
 				}
-				else if(pureResponse.equals("INVALID_TOKEN")) {
+				else if(pureResponse.equals(INVALID_TOKEN)) {
 					System.out.println("Your session has ended");
 				}
 				return;
@@ -260,14 +267,14 @@ public class User {
 		
 		try {	
 			if(MaintenanceUtil.checkResponse(response.get(0).get(0), response.get(0).get(1), pureResponse.toString(), cleanSchedule, nounces, encryption, svEncryption)) {
-				if(pureResponse.get(0).equals("INVALID_TOKEN")) {
+				if(pureResponse.get(0).equals(INVALID_TOKEN)) {
 					System.out.println("Your session has ended");
 					return;
-				}else if(pureResponse.equals("NOFRESH")) {
+				}else if(pureResponse.equals(NOFRESH)) {
 					System.out.println("[WARNING] Your nonce could not be accepted");
 					return;
 				}
-				else if(pureResponse.equals("WRONGSIG")) {
+				else if(pureResponse.equals(WRONGSIG)) {
 					System.out.println("[WARNING] Your signature could not be accepted");
 					return;
 				}
@@ -330,19 +337,19 @@ public class User {
 		
 		try {	
 			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
-				if(pureResponse.equals("OK")) {
+				if(pureResponse.equals(OK)) {
 					System.out.println("Device added to your network!");
 				}
-				else if(pureResponse.equals("NOK")) {
+				else if(pureResponse.equals(NOK)) {
 					System.out.println("Device could not be added to your network!");
 				}
-				else if(pureResponse.equals("NOFRESH")) {
+				else if(pureResponse.equals(NOFRESH)) {
 					System.out.println("[WARNING] Your nonce could not be accepted");
 				}
-				else if(pureResponse.equals("WRONGSIG")) {
+				else if(pureResponse.equals(WRONGSIG)) {
 					System.out.println("[WARNING] Your signature could not be accepted");
 				}
-				else if(pureResponse.equals("INVALID_TOKEN")) {
+				else if(pureResponse.equals(INVALID_TOKEN)) {
 					System.out.println("Your session has ended");
 				}
 				else {
@@ -403,18 +410,18 @@ public class User {
 		
 		try {	
 			if(MaintenanceUtil.checkResponse(response.get(0).get(0), response.get(0).get(1), pureResponse.toString(), cleanSchedule, nounces, encryption, svEncryption)) {
-				if(pureResponse.get(0).equals("INVALID_TOKEN")) {
+				if(pureResponse.get(0).equals(INVALID_TOKEN)) {
 					System.out.println("Your session has ended");
 					return;
-				}else if(pureResponse.equals("NOFRESH")) {
+				}else if(pureResponse.equals(NOFRESH)) {
 					System.out.println("[WARNING] Your nonce could not be accepted");
 					return;
 				}
-				else if(pureResponse.equals("WRONGSIG")) {
+				else if(pureResponse.equals(WRONGSIG)) {
 					System.out.println("[WARNING] Your signature could not be accepted");
 					return;
 				}
-				else if(pureResponse.equals("NODEV")) {
+				else if(pureResponse.equals(NODEV)) {
 					System.out.println("Your network doesn't have any devices");
 					return;
 				}
@@ -480,19 +487,19 @@ public class User {
 		
 		try {	
 			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse.toString(), cleanSchedule, nounces, encryption, svEncryption)) {
-				if(pureResponse.get(0).equals("INVALID_TOKEN")) {
+				if(pureResponse.get(0).equals(INVALID_TOKEN)) {
 					System.out.println("Your session has ended");
 					return;
 				}
-				else if(pureResponse.equals("NOFRESH")) {
+				else if(pureResponse.equals(NOFRESH)) {
 					System.out.println("[WARNING] Your nonce could not be accepted");
 					return;
 				}
-				else if(pureResponse.equals("WRONGSIG")) {
+				else if(pureResponse.equals(WRONGSIG)) {
 					System.out.println("[WARNING] Your signature could not be accepted");
 					return;
 				}
-				else if(pureResponse.equals("NODEV")) {
+				else if(pureResponse.equals(NODEV)) {
 					System.out.println("Couldn't find any commands for that device");
 					return;
 				}
@@ -555,22 +562,22 @@ public class User {
 		
 		try {	
 			if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
-				if(pureResponse.equals("OK")) {
+				if(pureResponse.equals(OK)) {
 					System.out.println("Command Succesfully Executed");
 				}
-				else if(pureResponse.equals("NOK")) {
+				else if(pureResponse.equals(NOK)) {
 					System.out.println("Command could not be Executed");
 				}
-				else if(pureResponse.equals("DEVICE_ERROR")) {
+				else if(pureResponse.equals(DEVICE_ERROR)) {
 					System.out.println("Device doesn't exist");
 				}
-				else if(pureResponse.equals("NOFRESH")) {
+				else if(pureResponse.equals(NOFRESH)) {
 					System.out.println("[WARNING] Your nonce could not be accepted");
 				}
-				else if(pureResponse.equals("WRONGSIG")) {
+				else if(pureResponse.equals(WRONGSIG)) {
 					System.out.println("[WARNING] Your signature could not be accepted");
 				}
-				else if(pureResponse.equals("INVALID_TOKEN")) {
+				else if(pureResponse.equals(INVALID_TOKEN)) {
 					System.out.println("Your session has ended");
 				}
 				else {
@@ -630,11 +637,15 @@ public class User {
 		byte[] pass = svEncryption.encrypt(password.getBytes(UTF8));
 
 		byte[] nounce = svEncryption.encrypt(pureNounce.getBytes(UTF8));
-
-		//TODO: Later Check if the user has a token! This should happen to every method
+		
 		if(authString.equals("")) {
 			//Normal Login
 			response = gateway.Login(name, pass, nounce, signature);
+			
+
+			if(response.get(2) == null) {
+				System.out.println("Wrong Username, Password or authentication code!");
+			}
 			
 			//decrypt response
 			String pureResponse = new String(encryption.decrypt(response.get(2)), UTF8);
@@ -642,18 +653,18 @@ public class User {
 			
 			try {
 				if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
-					if(pureResponse.equals("OK")) {
+					if(pureResponse.equals(OK)) {
 						System.out.println("Succesfully Authenticated");
 						token = response.get(3);
 						session = true;
 					}
-					else if(pureResponse.equals("NOFRESH")) {
+					else if(pureResponse.equals(NOFRESH)) {
 						System.out.println("[WARNING] Your nonce could not be accepted");
 					}
-					else if(pureResponse.equals("WRONGSIG")) {
+					else if(pureResponse.equals(WRONGSIG)) {
 						System.out.println("[WARNING] Your signature could not be accepted");
 					}
-					else if(pureResponse.equals("NOK")) {
+					else if(pureResponse.equals(NOK)) {
 						System.out.println("Wrong Username or Password!");
 					}
 
@@ -678,29 +689,32 @@ public class User {
 			
 			response = gateway.ReplenishLogin(encryption.base64Encoder(encryption.pubKeyToByteArray()), name, pass, auth, nounce, signature);
 			
+			if(response.get(2) == null) {
+				System.out.println("Wrong Username, Password or authentication code!");
+			}
+			
 			//decrypt response
-			String pureResponse = new String(response.get(2), UTF8);
+			String pureResponse = new String(encryption.decrypt(response.get(2)), UTF8);
 
 			try {	
 				if(MaintenanceUtil.checkResponse(response.get(0), response.get(1), pureResponse, cleanSchedule, nounces, encryption, svEncryption)) {
-					if(pureResponse.equals("OK")){
+					if(pureResponse.equals(OK)){
 						System.out.println("Succesfully Authenticated");
 						token = response.get(3);
 						session = true;
 					}
-					else if(pureResponse.equals("NOK")) {
+					else if(pureResponse.equals(NOK)) {
 						System.out.println("Wrong Username or Password!");
 					}
-					else if(pureResponse.equals("NOFRESH")) {
+					else if(pureResponse.equals(NOFRESH)) {
 						System.out.println("[WARNING] Your nonce could not be accepted");
 					}
-					else if(pureResponse.equals("WRONGSIG")) {
+					else if(pureResponse.equals(WRONGSIG)) {
 						System.out.println("[WARNING] Your signature could not be accepted");
 					}
 					return;
 					
 				}
-				
 				System.out.println("Something went wrong with your request!");
 				
 				} catch (UnsupportedEncodingException e) {
