@@ -408,12 +408,11 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			String[] strings_nonce = pure_nonce.split("%");
 			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
 
-			System.out.println("BEFORE DECRYPTING SHIT!!!");
 			String usernameToCheck = new String(encUtil.decrypt(username), UTF8);
 			String passwordToCheck = new String(encUtil.decrypt(password), UTF8);
 			String authStringToCheck = new String(encUtil.decrypt(authString), UTF8);
 			String dataToCheck = usernameToCheck + passwordToCheck + authStringToCheck + pure_nonce;
-			
+
 			User user = null;
 			for(User userCheck : users) {
 				if(userCheck.getAuthCode().equals(authStringToCheck) && userCheck.getUsername().equals(usernameToCheck) && 
@@ -427,6 +426,11 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				System.out.println("WRONG REFRESH ATTEMPT: WRONG AUTHCODE VERIFICATION!!!");
 				return null;
 			}
+
+			EncryptionUtil eu = new EncryptionUtil();
+			eu.setPublicKey(encUtil.byteArrayToPubKey(encUtil.base64Decoder(userPublicKey)), user.getUsername());
+			
+			user.setEncUtils(eu);
 			
 			System.out.println("BEFORE FRESHNESS CHECKING!!!");
 			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {

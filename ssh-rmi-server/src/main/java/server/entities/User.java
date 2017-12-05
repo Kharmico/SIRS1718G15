@@ -23,6 +23,7 @@ public class User {
 		this.type = type;
 		this.encUtils = new EncryptionUtil();
 		this.pubKey = null;
+		this.authCode = "";
 	}
 	
 	public User(String username, String password, String type, String authCode){
@@ -81,6 +82,10 @@ public class User {
 
 	public EncryptionUtil getEncUtils() {
 		return encUtils;
+	}
+	
+	public void setEncUtils(EncryptionUtil encUtils) {
+		this.encUtils = encUtils;
 	}
 	
 	public String getAuthCode() {
