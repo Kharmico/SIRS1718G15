@@ -147,12 +147,16 @@ def testEnc(dataMessage, secretkey, hmac_key):
     cry = getCryptogram([c,h,iv])
     return cry
 
-def login():
+def login(sock):
     try:
         auth1 = myName +","+GETSTATUS()+"," +"Fridge"
         cryptogram = testEnc(auth1,factoryKey,hmac_key)
-        GateWaySocketSendCmds.sendall(bytes (cryptogram, 'utf-8')) 
-        
+       # bmessage = bytes(cryptogram, 'utf-8')
+        sock.sendall(cryptogram)
+        data = sock.recv(1028)
+        data = data.decode('utf-8')
+        data = data.strip()
+        print(data)
     except Exception as inst:
         print("login error:" + str(inst))
         
@@ -205,7 +209,7 @@ def dataTransfer(conn, s):
             GateWaySocketSendCmds, address = GateWaySocketListen.accept()
             print("accepted GateWaySocketListen connecion")
             #periodicSend(testEnc("123456789", factoryKey, hmac_key ),GateWaySocketSendCmds)
-            login()
+            login(GateWaySocketSendCmds)
         else:
             reply = 'Unknown Command'
         # Send the reply back to the client

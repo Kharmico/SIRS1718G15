@@ -19,6 +19,9 @@ import java.util.Base64;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import sun.security.x509.*;
+import java.security.SecureRandom;
+
+
 
 public class EncryptionUtil {
 
@@ -341,6 +344,7 @@ public class EncryptionUtil {
         return null;
     }
 	
+	
 	public String decryptAES(byte[] key, byte[] initVector, String encrypted) {
         try {
             IvParameterSpec iv = new IvParameterSpec(initVector);
@@ -378,6 +382,23 @@ public class EncryptionUtil {
 
         return null;
     }
+	public byte[] encryptAESwithPadding(byte[] key, byte[] initVector, String encrypted) {
+        try {
+            IvParameterSpec iv = new IvParameterSpec(initVector);
+            SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+
+            Cipher cipher = Cipher.getInstance("AES/CBC/NOPADDING");
+            cipher.init(Cipher.ENCRYPT_MODE, skeySpec, iv);
+
+            byte[] original = cipher.doFinal(base64SDecoder(encrypted));
+
+            return original;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return null;
+    }
 	
 	public String calculateHMAC(byte[] data, byte[] key)
 			throws SignatureException, NoSuchAlgorithmException, InvalidKeyException
@@ -386,6 +407,15 @@ public class EncryptionUtil {
 			Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
 			mac.init(signingKey);
 			return BufferUtil.toHexString(mac.doFinal(data));
+		}
+	
+	public byte[] calculateHMACb(byte[] data, byte[] key)
+			throws SignatureException, NoSuchAlgorithmException, InvalidKeyException
+		{
+			SecretKeySpec signingKey = new SecretKeySpec(key, HMAC_SHA1_ALGORITHM);
+			Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
+			mac.init(signingKey);
+			return mac.doFinal(data);
 		}
 	
 	public byte[] toSHA1(byte[] convertme) {
@@ -398,7 +428,14 @@ public class EncryptionUtil {
 	    } 
 	    return (md.digest(convertme));
 	}
-
+	
+	public byte[] secureRandom(int nrBytes){
+	    SecureRandom random = new SecureRandom();
+	    byte bytes[] = new byte[nrBytes];
+	    random.nextBytes(bytes);
+	    return bytes;
+	}
+	
     public byte[] generateSignature(byte[] dataToBeSigned) throws SignatureException {
         Signature rsaForSign = null;
 
@@ -442,6 +479,12 @@ public class EncryptionUtil {
 
     public byte[] base64Encoder(byte[] toEncode){
         byte[] response = Base64.getEncoder().encode(toEncode);
+
+        return response;
+    }
+    
+    public String base64SEncoder(byte[] toEncode){
+        String response = Base64.getEncoder().encodeToString(toEncode);
 
         return response;
     }

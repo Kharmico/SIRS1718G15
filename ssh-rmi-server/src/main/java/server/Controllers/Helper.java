@@ -8,7 +8,6 @@ import java.io.DataInputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
@@ -156,7 +155,18 @@ public class Helper extends Thread{
 			String cryptogram []=  rcvdMessage.split(":");
 			
 			String msg = processMessage(cryptogram);
-			System.out.println(msg);
+			String devicedata[] = msg.split(",");
+			byte sessionkey[] = enc.secureRandom(16);
+			byte IV[] = enc.secureRandom(16);
+			
+			byte[] message = enc.base64Encoder(enc.encryptAESwithPadding(sessionkey, IV, enc.base64SEncoder(sessionkey)));
+			try {
+				String seskey = enc.base64SEncoder(message) +":"+ enc.base64SEncoder(enc.calculateHMACb(sessionkey, Hmac_key)) +":"+ enc.base64SEncoder(IV);
+				INout.write(seskey.getBytes());
+			} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
+				throw new IOException(e.getMessage());
+			}
+			
 			
     	
     }
@@ -167,7 +177,7 @@ public class Helper extends Thread{
     	String msg = null;
     	
     	if(cryptogram.length!=3) {
-			System.out.println("erro 1 na mensagem"); 
+			System.out.println("erro 1: Mensagem invalida"); 
 			throw new IOException();
 		} 
     	
@@ -197,9 +207,21 @@ public class Helper extends Thread{
 				break;
 			}
 		}
-		if (m == null)	System.out.println("erro 2 na mensagem");
+		if (m == null){	
+			System.out.println("erro 2: Nao foi possivel decifrar a mensgem");
+			throw new IOException();
+		}
 		
 		return msg;
 	
     }
+    
+    public String encryptMessage(String message, byte[] key){
+    	
+    	
+    	
+		return message;
+    	
+    }
+    
 }

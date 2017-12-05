@@ -99,7 +99,6 @@ public class GatewayApplication {
 				}
 				else{
 					System.out.println("Unrecognizable command");
-					break;
 				}
 
 			}
