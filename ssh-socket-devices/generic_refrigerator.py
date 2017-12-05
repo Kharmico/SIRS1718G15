@@ -26,10 +26,12 @@ GateWayOutPort = 0
 state = ["OFF", "REFRIGERATING", "COOLING_DOWN"]
 curState = 0
 myName = "Refrigerator " + str(randint(0,10))
+myType = "Fridge"
 
 factoryKey = ''
 base64FactoryKey = ''
 hmac_key = ''
+challenge = os.urandom(4)
 
 BLOCK_SIZE = 16  # Bytes for AES encryption
 
@@ -133,35 +135,37 @@ def Hmac_data(data, hkey):
 
 def getCryptogram(data):
     cyphertext = base64.b64encode(data[0]) + ":".encode() + base64.b64encode(data[1]) + ":".encode() + base64.b64encode(data[2])
-    #print(str(cyphertext))
-    print("Hmac Message: "+ str(base64.b64encode(data[1])))
+    print(str(cyphertext))
+    #print("Hmac Message: "+ str(base64.b64encode(data[1])))
     return cyphertext
 
-def testEnc(dataMessage, secretkey, hmac_key):
-    #print("dataMessage:"+dataMessage+"\tsecretkey:"+str(secretkey)+"\thmac_key:"+str(hmac_key))
+def encMsg(dataMessage, secretkey, hmac_key):
     c,iv = encryptdata(dataMessage, secretkey)
     h = Hmac_data(dataMessage, hmac_key)
-    print (dataMessage)
-    #h = Hmac_data("123456789", "OLA".encode("utf-8"))
-    print(str(h))
+    #print (dataMessage)
+    #print(str(h))
     cry = getCryptogram([c,h,iv])
     return cry
 
 def login(sock):
     try:
-        auth1 = myName +","+GETSTATUS()+"," +"Fridge"
-        cryptogram = testEnc(auth1,factoryKey,hmac_key)
+        auth1 = myName +","+GETSTATUS()+"," +myType+ ","+base64.b64encode(challenge).encode()
+        print(auth1)
+        cryptogram = encMsg(auth1,factoryKey,hmac_key)
+	#cryptogram = base64.b64encode(
        # bmessage = bytes(cryptogram, 'utf-8')
-        sock.sendall(cryptogram)
+        sock.sendall(cryptogram) 
         data = sock.recv(1028)
+        print("fds")
         data = data.decode('utf-8')
         data = data.strip()
-        print(data)
+       
+        print(str(data))
     except Exception as inst:
         print("login error:" + str(inst))
         
 def dataTransfer(conn, s):
-    global GateWaySocket
+    global GateWaySocket,GateWaySocketListen, GateWaySocketSendCmds 
     # A big loop that sends/receives data until told not to.
     while True:
         # Receive the data
@@ -189,11 +193,13 @@ def dataTransfer(conn, s):
             print("Our server is shutting down.")
             GateWaySocket.close()
             s.close()
+            GateWaySocketListen.close()
+            GateWaySocketSendCmds.close()
+            quit()
             return
         elif command.startswith( 'ENCRYPT' ):
             reply = str(encryption("OLA MARCELO", factoryKey))
         elif command.startswith( 'CONNECT' ):
-            global GateWaySocketListen, GateWaySocketSendCmds 
             URL = command.split()[1].split(':')
             GateWaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             GateWaySocket.connect((URL[0], int(URL[1])))
@@ -208,7 +214,7 @@ def dataTransfer(conn, s):
             GateWaySocketListen.listen(1)
             GateWaySocketSendCmds, address = GateWaySocketListen.accept()
             print("accepted GateWaySocketListen connecion")
-            #periodicSend(testEnc("123456789", factoryKey, hmac_key ),GateWaySocketSendCmds)
+            #periodicSend(encMsg("123456789", factoryKey, hmac_key ),GateWaySocketSendCmds)
             login(GateWaySocketSendCmds)
         else:
             reply = 'Unknown Command'

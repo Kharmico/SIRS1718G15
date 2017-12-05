@@ -1,5 +1,6 @@
 package utils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Formatter;
@@ -31,9 +32,10 @@ public final class BufferUtil {
 	}
 
 	public static byte[] pad(byte[] padInput, int padSize) {
-		if (padSize <= 0){
+		if (padSize < 0){
 			throw new IllegalArgumentException("padSize must be a positive number");
 		}
+		if(padSize == 0 ) padSize = 16;			//PKCS#7
 		int inputLen = padInput.length;
 
 		//byte value to put in each padded byte
@@ -63,6 +65,18 @@ public final class BufferUtil {
 		System.arraycopy(paddedInput, 0, original, 0, originalSize);
 		return original;
 	}
+	public static byte[] concatBytes(byte a[], byte b[]) {
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+		try {
+			outputStream.write( a );
+			outputStream.write( b );
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 
+		byte c[] = outputStream.toByteArray( );
+		return c;
+	}
 }
 
