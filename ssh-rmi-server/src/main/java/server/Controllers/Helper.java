@@ -29,7 +29,9 @@ public class Helper extends Thread{
 	private volatile String deviceState = "";
 	private String deviceKey ="";
 	private String sessionKey="";
-	byte[] Hmac_key;
+	private byte[] Hmac_key;
+	private byte[] challenge;
+	
 	private LinkedBlockingQueue <String> msgToSend = new LinkedBlockingQueue <String>();
 	
 	private Set<String> keys;
@@ -156,12 +158,21 @@ public class Helper extends Thread{
 			
 			String msg = processMessage(cryptogram);
 			String devicedata[] = msg.split(",");
+			
+			this.challenge = enc.base64SDecoder(devicedata[3]);
+			
 			byte sessionkey[] = enc.secureRandom(16);
 			byte IV[] = enc.secureRandom(16);
+			this.sessionKey = enc.base64SEncoder(sessionkey);
 			
-			byte[] message = enc.base64Encoder(enc.encryptAESwithPadding(sessionkey, IV, enc.base64SEncoder(sessionkey)));
+			String m = this.sessionKey + "," + enc.base64SEncoder(challenge);
+			
+			//byte[] message = BufferUtil.concatBytes(enc.base64Encoder(enc.encryptAESwithPadding(sessionkey, IV, enc.base64SEncoder(sessionkey))), ",".getBytes() );
+			byte[] cryptmsg = enc.encryptAESwithPadding(enc.base64SDecoder(deviceKey), IV, m);
+			
 			try {
-				String seskey = enc.base64SEncoder(message) +":"+ enc.base64SEncoder(enc.calculateHMACb(sessionkey, Hmac_key)) +":"+ enc.base64SEncoder(IV);
+				String seskey = enc.base64SEncoder(cryptmsg) +":"+ enc.base64SEncoder(enc.calculateHMACb(m.getBytes(), Hmac_key)) +":"+ enc.base64SEncoder(IV);
+				System.out.println();
 				INout.write(seskey.getBytes());
 			} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
 				throw new IOException(e.getMessage());
