@@ -164,7 +164,7 @@ public class Helper extends Thread{
 			byte sessionkey[] = enc.secureRandom(16);
 			byte IV[] = enc.secureRandom(16);
 			this.sessionKey = enc.base64SEncoder(sessionkey);
-			
+
 			String m = this.sessionKey + "," + enc.base64SEncoder(challenge);
 			
 			//byte[] message = BufferUtil.concatBytes(enc.base64Encoder(enc.encryptAESwithPadding(sessionkey, IV, enc.base64SEncoder(sessionkey))), ",".getBytes() );

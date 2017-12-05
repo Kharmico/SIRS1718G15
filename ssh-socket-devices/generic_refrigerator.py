@@ -150,6 +150,7 @@ def encMsg(dataMessage, secretkey, hmac_key):
 def login(sock):
     try:
         auth1 = myName +","+GETSTATUS()+"," +myType+ ","+base64.b64encode(challenge).decode("utf-8")
+
         print(auth1)
         cryptogram = encMsg(auth1,factoryKey,hmac_key)
 	#cryptogram = base64.b64encode(
