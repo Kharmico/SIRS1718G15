@@ -30,14 +30,15 @@ public class Helper extends Thread{
 	private String deviceKey ="";
 	private String sessionKey="";
 	private byte[] Hmac_key;
-	private byte[] challenge;
+	private volatile byte[] challenge;
 	
 	private LinkedBlockingQueue <String> msgToSend = new LinkedBlockingQueue <String>();
 	
 	private Set<String> keys;
 	
     public String getDeviceState() {
-    	OUTout.print("GETSTATUS");
+    	
+    	OUTout.print(encryptMessage("GETSTATUS", sessionKey));
     	byte[] bytes = new byte[1024];
     	try {
 			OUTin.read(bytes);
@@ -68,16 +69,20 @@ public class Helper extends Thread{
 
     public void run(){
     	EncryptionUtil enc = new EncryptionUtil();
-    	
 
-        //Read input and process here
-    	//pollMsgToSend("GETSTATUS");pollMsgToSend("SWITCH");pollMsgToSend("GETSTATUS");
-    	
-    	byte iv[] = enc.secureRandom(16);
     	String teste = "Mensagemparaagateway" + "," + enc.base64SEncoder(challenge);
+
     	
-    	byte[] cryptmsg = enc.encryptAESwithPadding(enc.base64SDecoder(sessionKey), iv, enc.base64SEncoder(teste.getBytes()));
+    	teste = encryptMessage(teste, sessionKey);
     	
+    	try {
+    		byte[] response = new byte[1024];
+			OUTout.write(teste.getBytes());
+			OUTin.read(response);
+			System.out.println(new String(response));
+		} catch (NullPointerException | IOException e2) {
+			e2.printStackTrace();
+		}
     	while(true){
     		
     		try {
@@ -171,14 +176,17 @@ public class Helper extends Thread{
 			byte IV[] = enc.secureRandom(16);
 			this.sessionKey = enc.base64SEncoder(sessionkey);
 
-			String m = this.sessionKey + "," + enc.base64SEncoder(challenge);
+			String m = this.sessionKey + "," + enc.base64SEncoder(challenge);			// [SESSIONKEY, CHALLENGE]Dk, H(S,Ch), IV
 			
-			byte[] cryptmsg = enc.encryptAESwithPadding(enc.base64SDecoder(deviceKey), IV, enc.base64SEncoder(m.getBytes()));
+			m = encryptMessage(m, deviceKey);
+			
+			//byte[] cryptmsg = enc.encryptAESwithPadding(enc.base64SDecoder(deviceKey), IV, enc.base64SEncoder(m.getBytes()));
 			
 			try {
-				String seskey = enc.base64SEncoder(cryptmsg) +":"+ enc.base64SEncoder(enc.calculateHMACb(m.getBytes(), Hmac_key)) +":"+ enc.base64SEncoder(IV);
-				INout.write(seskey.getBytes());
-			} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
+				//String seskey = enc.base64SEncoder(cryptmsg) +":"+ enc.base64SEncoder(enc.calculateHMACb(m.getBytes(), Hmac_key)) +":"+ enc.base64SEncoder(IV);
+				//INout.write(seskey.getBytes());
+				INout.write(m.getBytes());
+			} catch (NullPointerException e) {
 				throw new IOException(e.getMessage());
 			}
 			
@@ -232,8 +240,17 @@ public class Helper extends Thread{
 	
     }
     
-    public String encryptMessage(String message, byte[] key){
+    public String encryptMessage(String message, String key){
+    	EncryptionUtil enc = new EncryptionUtil();
+    	byte iv[] = enc.secureRandom(16);
     	
+    	byte[] cryptmsg = enc.encryptAESwithPadding(enc.base64SDecoder(key), iv, enc.base64SEncoder(message.getBytes()));
+    	try {
+			message = enc.base64SEncoder(cryptmsg) +":"+ enc.base64SEncoder(enc.calculateHMACb(message.getBytes(), Hmac_key)) +":"+ enc.base64SEncoder(iv);
+		} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e3) {
+			e3.printStackTrace();
+			message = null;
+		}
     	
     	
 		return message;
