@@ -146,6 +146,10 @@ def encMsg(dataMessage, secretkey, hmac_key):
     cry = getCryptogram([c,h,iv])
     return cry
 
+def decB64Msg(dataMessage):
+    message = base64.b64decode(dataMessage).decode("utf-8").split(":")
+    return message
+
 def getSessionKey(data, key):
     global challenge, sessionKey
     cryptogram = base64.b64decode(data.split(":")[0])
@@ -161,7 +165,6 @@ def getSessionKey(data, key):
         raise ValueError('[GETSESSIONKEY]Challenges don\'t match.')
     sessionKey = base64.b64decode(decryptedgram.split(b",")[1])
     
-    #print("seskey + challenge:" + .decode("utf-8"))
     
     
     
@@ -177,6 +180,8 @@ def login(sock):
         data = data.decode('utf-8')
         data = data.strip()
         getSessionKey(data, factoryKey)
+        
+        
         #print(str(data))
     except Exception as inst:
         print("login error:" + str(inst))
@@ -249,7 +254,7 @@ def serveGateway(conn):
         data = conn.recv(1028) # receive the data
         data = data.decode('utf-8')
         data = data.strip()
-        print("data value from Gateway: " + data)
+        print("data value from Gateway: " + str(decB64Msg(data)))
         # Split the data such that you separate the command
         # from the rest of the data.
         command = str(data)

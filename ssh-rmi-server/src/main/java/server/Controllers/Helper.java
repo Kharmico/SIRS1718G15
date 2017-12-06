@@ -72,6 +72,12 @@ public class Helper extends Thread{
 
         //Read input and process here
     	//pollMsgToSend("GETSTATUS");pollMsgToSend("SWITCH");pollMsgToSend("GETSTATUS");
+    	
+    	byte iv[] = enc.secureRandom(16);
+    	String teste = "Mensagemparaagateway" + "," + enc.base64SEncoder(challenge);
+    	
+    	byte[] cryptmsg = enc.encryptAESwithPadding(enc.base64SDecoder(sessionKey), iv, enc.base64SEncoder(teste.getBytes()));
+    	
     	while(true){
     		
     		try {
@@ -167,12 +173,10 @@ public class Helper extends Thread{
 
 			String m = this.sessionKey + "," + enc.base64SEncoder(challenge);
 			
-			//byte[] message = BufferUtil.concatBytes(enc.base64Encoder(enc.encryptAESwithPadding(sessionkey, IV, enc.base64SEncoder(sessionkey))), ",".getBytes() );
 			byte[] cryptmsg = enc.encryptAESwithPadding(enc.base64SDecoder(deviceKey), IV, enc.base64SEncoder(m.getBytes()));
 			
 			try {
 				String seskey = enc.base64SEncoder(cryptmsg) +":"+ enc.base64SEncoder(enc.calculateHMACb(m.getBytes(), Hmac_key)) +":"+ enc.base64SEncoder(IV);
-				System.out.println();
 				INout.write(seskey.getBytes());
 			} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
 				throw new IOException(e.getMessage());
