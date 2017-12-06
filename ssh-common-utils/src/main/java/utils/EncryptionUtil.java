@@ -389,7 +389,7 @@ public class EncryptionUtil {
 
             Cipher cipher = Cipher.getInstance("AES/CBC/NOPADDING");
             cipher.init(Cipher.ENCRYPT_MODE, skeySpec, iv);
-            
+
             byte[] paddedEnc = base64SDecoder(encrypted);
             byte[] message = BufferUtil.pad(paddedEnc, paddedEnc.length %16);
             
