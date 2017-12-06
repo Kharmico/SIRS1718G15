@@ -32,10 +32,9 @@ public final class BufferUtil {
 	}
 
 	public static byte[] pad(byte[] padInput, int padSize) {
-		if (padSize < 0){
+		if (padSize <= 0){
 			throw new IllegalArgumentException("padSize must be a positive number");
 		}
-		if(padSize == 0 ) padSize = 16;			//PKCS#7
 		int inputLen = padInput.length;
 
 		//byte value to put in each padded byte
@@ -52,6 +51,13 @@ public final class BufferUtil {
 			paddedArray[inputLen + i] = padNum;
 		}
 		return paddedArray;
+	}
+	
+	public static byte[] pkcs7pad(byte[] padInput) {
+		
+		int padnr = 16 - (padInput.length % 16);
+		
+		return pad(padInput, padnr);
 	}
 
 	public static byte[] removePad(byte[] paddedInput) {

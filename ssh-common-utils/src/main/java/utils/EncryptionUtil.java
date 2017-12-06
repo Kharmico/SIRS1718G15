@@ -390,10 +390,10 @@ public class EncryptionUtil {
             Cipher cipher = Cipher.getInstance("AES/CBC/NOPADDING");
             cipher.init(Cipher.ENCRYPT_MODE, skeySpec, iv);
 
-            byte[] paddedEnc = base64SDecoder(encrypted);
-            byte[] message = BufferUtil.pad(paddedEnc, paddedEnc.length %16);
+            byte[] message = base64SDecoder(encrypted);
+            byte[] paddedEnc = BufferUtil.pkcs7pad(message);
             
-            byte[] original = cipher.doFinal(message);
+            byte[] original = cipher.doFinal(paddedEnc);
 
             return original;
         } catch (Exception ex) {

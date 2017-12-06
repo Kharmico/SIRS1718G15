@@ -28,10 +28,11 @@ curState = 0
 myName = "Refrigerator " + str(randint(0,10))
 myType = "Fridge"
 
-factoryKey = ''
-base64FactoryKey = ''
-hmac_key = ''
-challenge = os.urandom(4)
+factoryKey = ''             #bytes
+base64FactoryKey = ''       #Base64
+hmac_key = ''               #bytes
+challenge = os.urandom(4)   #bytes
+sessionKey = ''             #bytes
 
 BLOCK_SIZE = 16  # Bytes for AES encryption
 
@@ -50,13 +51,17 @@ def periodicSend(message, socket):
     #print(message + time.ctime())
     threading.Timer(1, periodicSend, [message,socket]).start()
 
+def generateNewChallenge():
+    global challenge
+    challenge = os.urandom(4)
+
 def generateFactoryKey():
      key = os.urandom(16)			#128 bits
      encodedkey = base64.b64encode(key)
      print("secret key:" + str(key) + "\nbase64 secret key:" + str(encodedkey))
      decodedkey = base64.b64decode(encodedkey)
      hmac_key = sha1(key).digest()
-     print("Hmac key["+str(getsizeof(hmac_key))+"]:" + str(hmac_key)+"\nbase64HMACKey:" + str(base64.b64encode(hmac_key)))
+     #print("Hmac key["+str(getsizeof(hmac_key))+"]:" + str(hmac_key)+"\nbase64HMACKey:" + str(base64.b64encode(hmac_key)))
      return key, encodedkey,hmac_key 
 
 def setupGatewayServer():
@@ -95,28 +100,11 @@ def REPEAT(dataMessage):
     reply = dataMessage[1]
     return reply
 
-    
 def switchState():
     global curState 
     curState = curState + 1 % len(state)
     reply = "The "+ myName +" state has been switched!"
     return reply
-
-def encryption(privateInfo, secretkey):         # Send the reply back to the client
-
-	BLOCK_SIZE = 16 
-	PADDING ='{' 
-	
-	pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * PADDING 
-	
-	EncodeAES = lambda c, s: base64.b64encode (c.encrypt (pad(s))) 
-	
-	print ('encryption key:'), secretkey
-	
-	cipher = AES.new(secretkey) 
-	encoded = EncodeAES(cipher, privateInfo) 
-	print ('Encrypted string:'), encoded
-	return encoded
 
 def encryptdata(data, secretkey):     
     iv =  Random.new().read(AES.block_size)
@@ -126,11 +114,22 @@ def encryptdata(data, secretkey):
     cypherpart = cipher.encrypt(paddeddata)
     
     return cypherpart,iv
+
+def decryptdata(data, secretkey, iv):     
+    cipher = AES.new(factoryKey, AES.MODE_CBC, iv)
+    cypherpart = cipher.decrypt(data)
     
-def Hmac_data(data, hkey):
+    unpaddeddata = unpad(cypherpart)
+    return unpaddeddata
+    
+def Hmac_data_to_send(data, hkey):
     datatosend = pad(data).encode()
     print("hmac'ing"+str(datatosend))
     a = HMAC.new(hkey, datatosend, SHA).digest()
+    return a
+
+def calc_Hmac(data, hkey):
+    a = HMAC.new(hkey, data, SHA).digest()
     return a
 
 def getCryptogram(data):
@@ -141,27 +140,44 @@ def getCryptogram(data):
 
 def encMsg(dataMessage, secretkey, hmac_key):
     c,iv = encryptdata(dataMessage, secretkey)
-    h = Hmac_data(dataMessage, hmac_key)
+    h = Hmac_data_to_send(dataMessage, hmac_key)
     #print (dataMessage)
     #print(str(h))
     cry = getCryptogram([c,h,iv])
     return cry
 
+def getSessionKey(data, key):
+    global challenge, sessionKey
+    cryptogram = base64.b64decode(data.split(":")[0])
+    hmac = base64.b64decode(data.split(":")[1])
+    iv   = base64.b64decode(data.split(":")[2])
+    decryptedgram = decryptdata(cryptogram, key, iv)    #B64SessionKey, B64Challenge
+    print("before")
+    calcHmac = calc_Hmac(decryptedgram, hmac_key)
+    if(calcHmac != hmac):
+        raise ValueError('[GETSESSIONKEY]HMACs don\'t match.')
+    ch = base64.b64decode(decryptedgram.split(b",")[1])
+    if(ch != challenge): 
+        raise ValueError('[GETSESSIONKEY]Challenges don\'t match.')
+    sessionKey = base64.b64decode(decryptedgram.split(b",")[1])
+    
+    #print("seskey + challenge:" + .decode("utf-8"))
+    
+    
+    
 def login(sock):
+    generateNewChallenge()
     try:
         auth1 = myName +","+GETSTATUS()+"," +myType+ ","+base64.b64encode(challenge).decode("utf-8")
 
         print(auth1)
         cryptogram = encMsg(auth1,factoryKey,hmac_key)
-	#cryptogram = base64.b64encode(
-       # bmessage = bytes(cryptogram, 'utf-8')
         sock.sendall(cryptogram) 
         data = sock.recv(1028)
-        print("fds")
         data = data.decode('utf-8')
         data = data.strip()
-       
-        print(str(data))
+        getSessionKey(data, factoryKey)
+        #print(str(data))
     except Exception as inst:
         print("login error:" + str(inst))
         
