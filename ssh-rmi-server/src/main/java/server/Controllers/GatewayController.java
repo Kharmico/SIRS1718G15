@@ -591,7 +591,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 						/* tell nanny to get to work as an independent thread */
 
 
-					} catch (IOException e) {
+					} catch (IOException | NullPointerException e ) {
 						try {
 							if(connection != null) 
 								connection.close();

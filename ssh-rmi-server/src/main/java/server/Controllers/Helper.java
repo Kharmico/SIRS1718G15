@@ -168,7 +168,7 @@ public class Helper extends Thread{
 			String m = this.sessionKey + "," + enc.base64SEncoder(challenge);
 			
 			//byte[] message = BufferUtil.concatBytes(enc.base64Encoder(enc.encryptAESwithPadding(sessionkey, IV, enc.base64SEncoder(sessionkey))), ",".getBytes() );
-			byte[] cryptmsg = enc.encryptAESwithPadding(enc.base64SDecoder(deviceKey), IV, m);
+			byte[] cryptmsg = enc.encryptAESwithPadding(enc.base64SDecoder(deviceKey), IV, enc.base64SEncoder(m.getBytes()));
 			
 			try {
 				String seskey = enc.base64SEncoder(cryptmsg) +":"+ enc.base64SEncoder(enc.calculateHMACb(m.getBytes(), Hmac_key)) +":"+ enc.base64SEncoder(IV);
@@ -212,6 +212,7 @@ public class Helper extends Thread{
 					
 					if(calculatedMac.equals(BufferUtil.toHexString(Hmac)))
 						msg = m;
+					else continue;
 				} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
 					e.getMessage();
 				}
