@@ -8,12 +8,15 @@ public class Device {
 	private String Status;
 	private String Type;
 	private ArrayList<String> Commands;
-	
+	private Boolean accepted;
+
 	public Device(String n, String s, String t){
 		Name = n;
 		Status = s;
 		Type = t;
 		Commands = new ArrayList<String>();
+		accepted = false;
+		
 	}
 
 	public String getName() {
@@ -44,6 +47,13 @@ public class Device {
 		return Commands;
 	}
 
+	public Boolean getAccepted() {
+		return accepted;
+	}
+
+	public void setAccepted(Boolean accepted) {
+		this.accepted = accepted;
+	}
 	public void setCommands(ArrayList<String> commands) {
 		Commands = commands;
 	}
