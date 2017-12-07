@@ -41,6 +41,8 @@ pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * \
                 
 unpad = lambda s: s[:-ord(s[len(s) - 1:])]
 
+print(myName)
+
 def periodicSend(message, socket):
     #
     if(type(message) == bytes):

@@ -14,6 +14,7 @@ import java.security.SignatureException;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import server.entities.Device;
 import utils.BufferUtil;
 import utils.EncryptionUtil;
 
@@ -27,6 +28,7 @@ public class Helper extends Thread{
 	private PrintStream INout= null;
 
 	private volatile String deviceState = "";
+	private String deviceName="";
 	private String deviceKey ="";
 	private String sessionKey="";
 	private String tempSessionKey="";
@@ -91,11 +93,12 @@ public class Helper extends Thread{
 
 	}
 
-	public Helper(Socket socket, int deviceListenPort, Set<String> keys) throws UnknownHostException, IOException {
+	public Helper(String deviceName, Socket socket, int deviceListenPort, Set<String> keys) throws UnknownHostException, IOException {
 
 		super("Helper");
 		this.socketOUT = socket;
 		this.keys = keys;
+		this.deviceName=deviceName;
 
 		socketIN = new Socket(socket.getInetAddress().getHostAddress(), deviceListenPort);
 
@@ -195,7 +198,7 @@ public class Helper extends Thread{
 		}
 	}
 
-	public void login() throws IOException{
+	public Device login() throws IOException{
 
 		byte[] bytes = new byte[1024];
 
@@ -231,11 +234,13 @@ public class Helper extends Thread{
 		rcvdMessage = new String(bytes, "UTF-8").trim();
 		cryptogram =  rcvdMessage.split(":");
 		msg = processMessage(cryptogram);
-		devicedata = msg.split(",");
-		this.challenge = enc.base64SDecoder(devicedata[1]);
-		if(new String(enc.base64SDecoder(devicedata[0])).equals("NACK"))
+		String devicemsg[] = msg.split(",");
+		this.challenge = enc.base64SDecoder(devicemsg[1]);
+		if(new String(enc.base64SDecoder(devicemsg[0])).equals("NACK"))
 			throw new IOException();
-
+		
+		Device d = new Device(deviceName,devicedata[1],devicedata[2], this);
+		return d;
 	}
 
 	public String receiveACKorNACK(DataInputStream in){

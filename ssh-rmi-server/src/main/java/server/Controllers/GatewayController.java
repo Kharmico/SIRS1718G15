@@ -801,8 +801,8 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 							continue;
 						};
 						String devPort = new String(data, "UTF-8").trim().split(":")[1] ;
-						Helper con = new Helper(connection, Integer.parseInt(devPort),b64keys); 
-						con.login();
+						Helper con = new Helper(deviceName,connection, Integer.parseInt(devPort),b64keys); 
+						devices.add(con.login());
 						devConnections.put(deviceName, con);
 						con.start();	/* this code is executed when a device connects... */
 						

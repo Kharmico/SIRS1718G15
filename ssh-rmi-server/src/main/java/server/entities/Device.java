@@ -3,12 +3,15 @@ package server.entities;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import server.Controllers.Helper;
+
 public class Device {
 	private String Name;
 	private String Status;
 	private String Type;
 	private ArrayList<String> Commands;
 	private Boolean accepted;
+	private Helper h;
 
 	public Device(String n, String s, String t){
 		Name = n;
@@ -18,7 +21,18 @@ public class Device {
 		accepted = false;
 		
 	}
-
+	public Device(String n, String s, String t, Helper h){
+		Name = n;
+		Status = s;
+		Type = t;
+		Commands = new ArrayList<String>();
+		Commands.add("GETSTATUS");
+		Commands.add("RENEW");
+		Commands.add("SWITCH");
+		accepted = false;
+		this.h = h;
+		
+	}
 	public String getName() {
 		return Name;
 	}
@@ -28,6 +42,7 @@ public class Device {
 	}
 
 	public String getStatus() {
+		if(h!= null) Status = h.getDeviceState();
 		return Status;
 	}
 
@@ -59,6 +74,7 @@ public class Device {
 	}
 	
 	public ArrayList<String> getInfo() {
+		getStatus();
 		return new ArrayList<String>(Arrays.asList(Name, Status, Type));
 	}
 }
