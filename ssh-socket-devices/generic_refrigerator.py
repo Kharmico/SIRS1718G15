@@ -116,10 +116,13 @@ def encryptdata(data, secretkey):
     return cypherpart,iv
 
 def decryptdata(data, secretkey, iv):     
-    cipher = AES.new(factoryKey, AES.MODE_CBC, iv)
+    cipher = AES.new(secretkey, AES.MODE_CBC, iv)
     cypherpart = cipher.decrypt(data)
     
     unpaddeddata = unpad(cypherpart)
+    
+    if unpaddeddata == '':
+        raise Exception("error decrypting")
     return unpaddeddata
     
 def Hmac_data_to_send(data, hkey):
@@ -146,8 +149,9 @@ def encMsg(dataMessage, secretkey, hmac_key):
     cry = getCryptogram([c,h,iv])
     return cry
 
-def decB64Msg(dataMessage):
-    message = base64.b64decode(dataMessage).decode("utf-8").split(":")
+def decB64Msg(data):
+    data = data.split(':')
+    message =[base64.b64decode(data[0]) , base64.b64decode(data[1]),  base64.b64decode(data[2]) ]
     return message
 
 def getSessionKey(data, key):
@@ -163,7 +167,7 @@ def getSessionKey(data, key):
     ch = base64.b64decode(decryptedgram.split(b",")[1])
     if(ch != challenge): 
         raise ValueError('[GETSESSIONKEY]Challenges don\'t match.')
-    sessionKey = base64.b64decode(decryptedgram.split(b",")[1])
+    sessionKey = base64.b64decode(decryptedgram.split(b",")[0])
     
     
     
@@ -249,16 +253,37 @@ def dataTransfer(conn, s):
 
 def serveGateway(conn):
     print ("Handling Gateway")
+    global sessionKey
     while True:
         # Receive the data
         data = conn.recv(1028) # receive the data
-        data = data.decode('utf-8')
-        data = data.strip()
-        print("data value from Gateway: " + str(decB64Msg(data)))
-        # Split the data such that you separate the command
-        # from the rest of the data.
+        try:
+            data = data.decode('utf-8')
+            data = data.strip()
+            data = decB64Msg(data)      # [ [c,ch]:h:iv].
+        except Exception as e:
+            print("Error" + str(e))
+            continue
+  
+        decryptedgram = ''
+        try:
+           decryptedgram = decryptdata(data[0], sessionKey, data[2])
+        except Exception as e:
+            print("["+type(e)+"]Couldn't decrypt with SessionKey. Decrypting with Device Key")
+            try:
+                decryptedgram = decryptdata(data[0], factoryKey, data[2])
+            except Exception as e:
+                print("["+type(e)+"]Couldn't decrypt with DeviceKey. Fail")
+                continue
+            
+        decryptedgram = decryptedgram.split(b",")    
+        if (base64.b64decode(decryptedgram[1]) != challenge):
+            print('[GATEWAY CONN]Challenges don\'t match.')
+            continue
+        
+        data = decryptedgram[0]
+        
         command = str(data)
-        print("data length from Gateway: " + str(getsizeof(command)))
         reply = ""
         if command == "GETSTATUS":
             reply = GETSTATUS()
