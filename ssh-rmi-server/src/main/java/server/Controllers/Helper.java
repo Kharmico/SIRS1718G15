@@ -61,6 +61,48 @@ public class Helper extends Thread{
 
 	}
 	
+	public String switchDeviceState() {
+
+		try {
+			String message = encryptMessage("SWITCH" + "," + enc.base64SEncoder(challenge), sessionKey);
+			OUTout.write(message.getBytes());
+			byte[] bytes = new byte[1024];
+
+			OUTin.read(bytes);
+			String devState[] = new String(bytes, "UTF-8").trim().split(":");
+			
+			String temp[] = processMessage(devState).split(","); // [b64 ACK/NACK, b64Challenge]
+			this.challenge = enc.base64SDecoder(temp[1]);
+			message = new String(enc.base64SDecoder(temp[0]));
+			return message;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "Not able to switch state of device. Please try again.";
+
+	}
+	
+	public String setCustomState(String stateName) {
+
+		try {
+			String message = encryptMessage("SETSTATE " +stateName+ "," + enc.base64SEncoder(challenge), sessionKey);
+			OUTout.write(message.getBytes());
+			byte[] bytes = new byte[1024];
+
+			OUTin.read(bytes);
+			String devState[] = new String(bytes, "UTF-8").trim().split(":");
+			
+			String temp[] = processMessage(devState).split(","); // [b64 ACK/NACK, b64Challenge]
+			this.challenge = enc.base64SDecoder(temp[1]);
+			message = new String(enc.base64SDecoder(temp[0]));
+			return message;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "Not able to switch state of device. Please try again.";
+
+	}
+	
 	public String renewSessionKey() {
 
 		try {
@@ -92,6 +134,8 @@ public class Helper extends Thread{
 		return "Not able to renew key of device. Please try again.";
 
 	}
+	
+	
 
 	public Helper(String deviceName, Socket socket, int deviceListenPort, Set<String> keys) throws UnknownHostException, IOException {
 

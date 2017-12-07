@@ -26,9 +26,10 @@ public class Device {
 		Status = s;
 		Type = t;
 		Commands = new ArrayList<String>();
-		Commands.add("GETSTATUS");
-		Commands.add("RENEW");
-		Commands.add("SWITCH");
+		//Commands.add("GETSTATUS");
+		Commands.add("RENEWSESSIONKEY");
+		Commands.add("SWITCHSTATE");
+		Commands.add("SETSTATE");
 		accepted = false;
 		this.h = h;
 		
@@ -42,7 +43,9 @@ public class Device {
 	}
 
 	public String getStatus() {
-		if(h!= null) Status = h.getDeviceState();
+		if(h!= null){
+			Status = h.getDeviceState();
+		}
 		return Status;
 	}
 
@@ -71,6 +74,20 @@ public class Device {
 	}
 	public void setCommands(ArrayList<String> commands) {
 		Commands = commands;
+	}
+	
+	public void sendCommand(String com){
+		if(com.equals("SWITCHSTATE")){
+			h.switchDeviceState();
+		}
+		else if (com.equals("RENEW")){
+			h.renewSessionKey();
+		}
+		
+		else if (com.contains("SETSTATE")){
+			h.setCustomState(com.split(" ",2)[1]);
+		}
+		
 	}
 	
 	public ArrayList<String> getInfo() {

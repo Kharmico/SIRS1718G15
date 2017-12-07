@@ -24,6 +24,7 @@ GateWaySocketSendCmds = ''
 GateWayOutPort = 0
 
 state = ["OFF", "REFRIGERATING", "COOLING_DOWN"]
+customState = ''
 curState = 0
 myName = "Refrigerator" + str(randint(0,100))
 myType = "Fridge"
@@ -95,7 +96,10 @@ def setupConnection():
     return conn
 
 def GETSTATUS():
-    reply = state[curState]
+    if customState == '':
+        reply = state[curState]
+    else:
+        reply = customState
     return reply
 
 def REPEAT(dataMessage):
@@ -103,7 +107,8 @@ def REPEAT(dataMessage):
     return reply
 
 def switchState():
-    global curState 
+    global curState, customState
+    customState = ''
     curState = curState + 1 % len(state)
     reply = "The "+ myName +" state has been switched!"
     return reply
@@ -268,7 +273,7 @@ def dataTransfer(conn, s):
 
 def serveGateway(conn):
     print ("Handling Gateway")
-    global sessionKey
+    global sessionKey, customState
     while True:
         # Receive the data
         data = conn.recv(1028) # receive the data
@@ -322,10 +327,16 @@ def serveGateway(conn):
             reply = GETSTATUS()
             print (command)
             print (reply)
-        elif command == 'REPEAT':
-            reply = REPEAT(data)
+        elif command.startswith('SETSTATE'):
+            try:
+                customState = command.split()[1]
+                reply = 'ACK'
+            except Exception as e:
+                print(str(e))
+                reply = 'NACK'
         elif command == 'SWITCH':
-            reply = switchState()
+            switchState()
+            reply = 'ACK'
         elif command == 'EXIT':
             print("Our Gateway has left us :(")
             break

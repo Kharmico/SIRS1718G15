@@ -93,6 +93,16 @@ public class GatewayApplication {
 					}
 				}
 				
+				else if(cmd.equals("switch")) {
+					Map<String, Helper> devConnections = stub.devConnections;
+					if(devConnections == null) continue;
+					for ( Map.Entry<String, Helper> e : devConnections.entrySet()){
+						String state = e.getValue().switchDeviceState();
+						if ( state == null ) state = "Null";
+						System.out.println(e.getKey() +":"+ state);
+					}
+				}
+				
 				else if(cmd.equals("exit")){
 					System.exit(MAX_PRIORITY);
 				}
