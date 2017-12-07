@@ -353,5 +353,16 @@ public class Helper extends Thread{
 		return message;
 
 	}
-
+	
+	public void closeAllConnections() throws IOException{
+		String message = encryptMessage("KILL" + "," + enc.base64SEncoder(challenge), sessionKey);
+		OUTout.write(message.getBytes());
+		
+		OUTin.close();
+		OUTout.close();
+		INin.close();
+		INout.close();
+		socketIN.close();
+		socketOUT.close();
+	}
 }

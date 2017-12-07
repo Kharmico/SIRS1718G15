@@ -358,7 +358,10 @@ public class EncryptionUtil {
             original = BufferUtil.removePad(original);
 
             return new String(original);
-        } catch (Exception ex) {
+        }catch(NegativeArraySizeException e) {
+        	
+        }
+        catch (Exception ex) {
             ex.printStackTrace();
         }
 

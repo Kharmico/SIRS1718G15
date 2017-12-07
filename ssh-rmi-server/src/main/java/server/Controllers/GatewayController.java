@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.SynchronousQueue;
 
 import org.joda.time.DateTime;
 
@@ -655,6 +656,21 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			//TODO FAZ AQUI O CODIGO DE REMOVER O DEVICE
+			for ( Map.Entry<String, Helper> e : devConnections.entrySet()){
+				String name = e.getKey();
+				if ( name.equals(deviceName)){
+					try{
+						e.getValue().closeAllConnections();
+						System.out.print(e.getKey() +":");
+						devConnections.remove(e.getKey());
+						System.out.print("REMOVED.\n");
+					}
+					catch(Exception exc){
+						
+					}
+				
+				}
+			}
 			
 			//TODO FIM
 			
