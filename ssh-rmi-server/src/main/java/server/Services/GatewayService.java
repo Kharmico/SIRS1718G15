@@ -16,6 +16,8 @@ public interface GatewayService extends Remote {
 
 	public List<byte[]> AcceptDevice(byte[] deviceName, byte[] code, byte[] nonce, byte[] signature, byte[] token) throws RemoteException;
 	
+	public List<byte[]> RemoveDevice(byte[] deviceName, byte[] nonce, byte[] signature, byte[] token) throws RemoteException;
+	
 	public List<ArrayList<byte[]>> GetUsers(byte[] nonce, byte[] signature, byte[] token) throws RemoteException;
 	
 	//General Requests
