@@ -804,8 +804,8 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 						Helper con = new Helper(connection, Integer.parseInt(devPort),b64keys); 
 						con.login();
 						devConnections.put(deviceName, con);
-						con.start();	/* this code is executed when a client connects... */
-						/* tell nanny to get to work as an independent thread */
+						con.start();	/* this code is executed when a device connects... */
+						
 
 
 					} catch (IOException | NullPointerException e ) {
