@@ -417,7 +417,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 						userCheck.getPassword().equals(passwordToCheck)) {
 					user = userCheck;
 					break;
-				}	
+				}
 			}
 			
 			if(user == null) {
@@ -437,16 +437,11 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				return answerRequest("WRONGSIG", user);
 			}
 			
-			System.out.println("BEFORE LOGIN CREDENTIALS CHECKING!!!\n" + usernameToCheck + " " + passwordToCheck + " " + user.getUsername() + " " + user.getPassword());
-			if(!(usernameToCheck.equals(user.getUsername()) && passwordToCheck.equals(user.getPassword()))) {
-				System.out.println("WRONG REFRESH ATTEMPT: LOGIN CRAP VERIFICATION!!!");
-				return answerRequest("NOK", user);
-			}
-			
 			nonceList.add(pure_nonce);
 			Key pubKey = encUtil.byteArrayToPubKey(encUtil.base64Decoder(userPublicKey));
 			user.getEncUtils().setPublicKey(pubKey, usernameToCheck);
 			String token = user.generateToken();
+			user.rstAuthCode();
 			return answerRequest("OK", token, user);
 			
 		} catch (UnsupportedEncodingException e) {
@@ -476,7 +471,8 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			
 			User user = null;
 			for(User userCheck : users) {
-				if(userCheck.getUsername().equals(usernameToCheck) && userCheck.getPassword().equals(passwordToCheck)) {
+				if(userCheck.getUsername().equals(usernameToCheck) && userCheck.getPassword().equals(passwordToCheck) && 
+						userCheck.lastToken().equals("")) {
 					user = userCheck;
 					break;
 				}	

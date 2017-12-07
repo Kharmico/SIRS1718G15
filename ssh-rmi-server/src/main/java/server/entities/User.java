@@ -87,6 +87,10 @@ public class User {
 		return authCode;
 	}
 	
+	public void rstAuthCode() {
+		this.authCode = "";
+	}
+	
 	// Hash -> Username+Type(type of user, i.e. admin, regular user, etc.)+LastLoginDate+LastLoginUUID H{U+T+D+I}
 	public String generateToken(){
 		DateTime now = new DateTime().now();
