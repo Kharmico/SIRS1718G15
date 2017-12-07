@@ -25,11 +25,14 @@ GateWayOutPort = 0
 
 state = ["OFF", "REFRIGERATING", "COOLING_DOWN"]
 curState = 0
-myName = "Refrigerator " + str(randint(0,10))
+myName = "Refrigerator" + str(randint(0,100))
+myType = "Fridge"
 
-factoryKey = ''
-base64FactoryKey = ''
-hmac_key = ''
+factoryKey = ''             #bytes
+base64FactoryKey = ''       #Base64
+hmac_key = ''               #bytes
+challenge = os.urandom(4)   #bytes
+sessionKey = ''             #bytes
 
 BLOCK_SIZE = 16  # Bytes for AES encryption
 
@@ -41,20 +44,24 @@ unpad = lambda s: s[:-ord(s[len(s) - 1:])]
 def periodicSend(message, socket):
     #
     if(type(message) == bytes):
-        print(message.decode("utf-8"))
+        #print(message.decode("utf-8"))
         socket.sendall(message)
     else:
         socket.sendall(bytes(message, 'utf-8'))
     #print(message + time.ctime())
     threading.Timer(1, periodicSend, [message,socket]).start()
 
+def generateNewChallenge():
+    global challenge
+    challenge = os.urandom(4)
+
 def generateFactoryKey():
      key = os.urandom(16)			#128 bits
      encodedkey = base64.b64encode(key)
      print("secret key:" + str(key) + "\nbase64 secret key:" + str(encodedkey))
      decodedkey = base64.b64decode(encodedkey)
-     print("decoded base64 secret key:" + str(decodedkey))
-     hmac_key = sha1(encodedkey).hexdigest().encode()
+     hmac_key = sha1(key).digest()
+     #print("Hmac key["+str(getsizeof(hmac_key))+"]:" + str(hmac_key)+"\nbase64HMACKey:" + str(base64.b64encode(hmac_key)))
      return key, encodedkey,hmac_key 
 
 def setupGatewayServer():
@@ -93,55 +100,111 @@ def REPEAT(dataMessage):
     reply = dataMessage[1]
     return reply
 
-def testEnc(dataMessage, secretkey, hmac_key):
-    c,iv = encryptdata(dataMessage, factoryKey)
-    h = Hmac_data(dataMessage, hmac_key)
-    cry = getCryptogramB64([c,h,iv])
-    return cry
-    
 def switchState():
     global curState 
     curState = curState + 1 % len(state)
     reply = "The "+ myName +" state has been switched!"
     return reply
 
-def encryption(privateInfo, secretkey):         # Send the reply back to the client
-
-	BLOCK_SIZE = 16 
-	PADDING ='{' 
-	
-	pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * PADDING 
-	
-	EncodeAES = lambda c, s: base64.b64encode (c.encrypt (pad(s))) 
-	
-	print ('encryption key:'), secretkey
-	
-	cipher = AES.new(secretkey) 
-	encoded = EncodeAES(cipher, privateInfo) 
-	print ('Encrypted string:'), encoded
-	return encoded
-
-def encryptdata(data, secretkey):
-    
-                
+def encryptdata(data, secretkey):     
     iv =  Random.new().read(AES.block_size)
-    cipher = AES.new(factoryKey, AES.MODE_CBC, iv)
+    cipher = AES.new(secretkey, AES.MODE_CBC, iv)
     
-    cypherpart = cipher.encrypt(pad(data))
+    paddeddata = pad(data)
+    cypherpart = cipher.encrypt(paddeddata)
     
     return cypherpart,iv
+
+def decryptdata(data, secretkey, iv):     
+    cipher = AES.new(secretkey, AES.MODE_CBC, iv)
+    cypherpart = cipher.decrypt(data)
     
-def Hmac_data(data, hkey):
+    unpaddeddata = unpad(cypherpart)
     
-    a = HMAC.new(hkey, pad(data).encode(), SHA).digest()
+    if unpaddeddata == '':
+        raise Exception("error decrypting")
+    return unpaddeddata
+    
+def Hmac_data_to_send(data, hkey):
+    datatosend = pad(data).encode()
+    print("hmac'ing"+str(datatosend))
+    a = HMAC.new(hkey, datatosend, SHA).digest()
     return a
 
-def getCryptogramB64(data):
-    cyphertext = data[0] + ":".encode() + data[1] + ":".encode() + data[2]
+def calc_Hmac(data, hkey):
+    a = HMAC.new(hkey, data, SHA).digest()
+    return a
+
+def getCryptogram(data):
+    cyphertext = base64.b64encode(data[0]) + ":".encode() + base64.b64encode(data[1]) + ":".encode() + base64.b64encode(data[2])
+    print(str(cyphertext))
+    #print("Hmac Message: "+ str(base64.b64encode(data[1])))
     return cyphertext
 
+def encMsg(dataMessage, secretkey, hmac_key):
+    c,iv = encryptdata(dataMessage, secretkey)
+    h = Hmac_data_to_send(dataMessage, hmac_key)
+    #print (dataMessage)
+    #print(str(h))
+    cry = getCryptogram([c,h,iv])
+    return cry
+
+def decB64Msg(data):
+    data = data.split(':')
+    message =[base64.b64decode(data[0]) , base64.b64decode(data[1]),  base64.b64decode(data[2]) ]
+    return message
+
+def getSessionKey(data, key):
+    global challenge, sessionKey
+    cryptogram = base64.b64decode(data.split(":")[0])
+    hmac = base64.b64decode(data.split(":")[1])
+    iv   = base64.b64decode(data.split(":")[2])
+    decryptedgram = decryptdata(cryptogram, key, iv)    #B64SessionKey, B64Challenge
+    print("before")
+    calcHmac = calc_Hmac(decryptedgram, hmac_key)
+    if(calcHmac != hmac):
+        raise ValueError('[GETSESSIONKEY]HMACs don\'t match.')
+    ch = base64.b64decode(decryptedgram.split(b",")[1])
+    if(ch != challenge): 
+        raise ValueError('[GETSESSIONKEY]Challenges don\'t match.')
+    sessionKey = base64.b64decode(decryptedgram.split(b",")[0])
+    
+    
+    
+    
+def login(sock):
+    generateNewChallenge()
+    try:
+        auth1 = myName +","+GETSTATUS()+"," +myType+ ","+base64.b64encode(challenge).decode("utf-8")
+
+        print(auth1)
+        cryptogram = encMsg(auth1,factoryKey,hmac_key)
+        sock.sendall(cryptogram) 
+        data = sock.recv(1028)
+        data = data.decode('utf-8')
+        data = data.strip()
+        getSessionKey(data, factoryKey)
+        generateNewChallenge()
+        auth2 = base64.b64encode(b"ACK").decode("utf-8") + "," +base64.b64encode(challenge).decode("utf-8")
+        cryptogram = encMsg(auth2,sessionKey,hmac_key)
+        #print("LOGIN KEY:"+str(sessionKey)+ "LOGIN IV:" + 
+        sock.sendall(cryptogram)
+        
+        #print(str(data))
+    except Exception as inst:
+        print("login error:" + str(inst))
+ 
+def sendACKorNACK(boolean, sock):
+    m = ''
+    if boolean == True:
+        m = base64.b64encode(b"ACK").decode("utf-8") + "," + base64.b64encode(challenge).decode("utf-8")
+    else:
+        m = base64.b64encode(b"NACK").decode("utf-8")+ ","  + base64.b64encode(challenge).decode("utf-8")
+    cryptogram = encMsg(m,sessionKey,hmac_key)
+    sock.sendall(cryptogram)
+    
 def dataTransfer(conn, s):
-    global GateWaySocket
+    global GateWaySocket,GateWaySocketListen, GateWaySocketSendCmds 
     # A big loop that sends/receives data until told not to.
     while True:
         # Receive the data
@@ -169,11 +232,13 @@ def dataTransfer(conn, s):
             print("Our server is shutting down.")
             GateWaySocket.close()
             s.close()
+            GateWaySocketListen.close()
+            GateWaySocketSendCmds.close()
+            quit()
             return
         elif command.startswith( 'ENCRYPT' ):
             reply = str(encryption("OLA MARCELO", factoryKey))
         elif command.startswith( 'CONNECT' ):
-            global GateWaySocketListen, GateWaySocketSendCmds 
             URL = command.split()[1].split(':')
             GateWaySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             GateWaySocket.connect((URL[0], int(URL[1])))
@@ -188,9 +253,8 @@ def dataTransfer(conn, s):
             GateWaySocketListen.listen(1)
             GateWaySocketSendCmds, address = GateWaySocketListen.accept()
             print("accepted GateWaySocketListen connecion")
-            #print(testEnc("Ola", factoryKey, hmac_key ))
-            print(str(base64.b64encode(testEnc("Ola", factoryKey, hmac_key ) )))
-            periodicSend(base64.b64encode(testEnc("Ola", factoryKey, hmac_key )),GateWaySocketSendCmds)
+            #periodicSend(encMsg("123456789", factoryKey, hmac_key ),GateWaySocketSendCmds)
+            login(GateWaySocketSendCmds)
         else:
             reply = 'Unknown Command'
         # Send the reply back to the client
@@ -202,16 +266,55 @@ def dataTransfer(conn, s):
 
 def serveGateway(conn):
     print ("Handling Gateway")
+    global sessionKey
     while True:
         # Receive the data
         data = conn.recv(1028) # receive the data
-        data = data.decode('utf-8')
-        data = data.strip()
-        print("data value from Gateway: " + data)
-        # Split the data such that you separate the command
-        # from the rest of the data.
-        command = str(data)
-        print("data length from Gateway: " + str(getsizeof(command)))
+        try:
+            data = data.decode('utf-8')
+            data = data.strip()
+            data = decB64Msg(data)      # [ [c,ch]:h:iv].
+        except Exception as e:
+            print("Error" + str(e))
+            sendACKorNACK(False, conn)
+            continue
+  
+        decryptedgram = ''
+        hmac = ''
+        try:
+            decryptedgram = decryptdata(data[0], sessionKey, data[2])
+            if decryptedgram == b'':
+                print("[GW]Couldn't decrypt with SessionKey. Decrypting with Device Key")
+                decryptedgram = decryptdata(data[0], factoryKey, data[2])
+                if decryptedgram == b'':
+                    raise Exception()
+        except Exception as e:
+            print("["+str(type(e))+"]Couldn't decrypt with DeviceKey. Fail")
+            sendACKorNACK(False, conn)
+            continue
+        
+        hmac = calc_Hmac(decryptedgram, hmac_key)
+        decryptedgram = decryptedgram.split(b",") 
+        try:
+            if (base64.b64decode(decryptedgram[1]) != challenge):
+                print('[GATEWAY CONN]Challenges don\'t match.')
+               
+            if ( data[1] != hmac):
+                print('[GATEWAY CONN]HMACs don\'t match.')
+                sendACKorNACK(False, conn)
+                continue
+        except:
+            sendACKorNACK(False, conn)
+            continue
+        
+        generateNewChallenge()
+        
+        data = decryptedgram[0]
+        try:
+            command = data.decode()
+        except AttributeError as e:
+            command = str(data)
+            
         reply = ""
         if command == "GETSTATUS":
             reply = GETSTATUS()
@@ -227,9 +330,21 @@ def serveGateway(conn):
         elif command == 'KILL':
             print("Our device is shutting down.")
             return
+        elif command.startswith( 'RENEW' ):
+            try:            
+                key = command.split()
+                sessionKey = base64.b64decode(key[1])
+                reply = 'ACK'
+            except Exception as e:
+                print(str(e))
+                reply = 'NACK'
+            #getSessionKey
+            
         else:
             reply = '[GATEWAY]Unknown Command'
-        conn.sendall(bytes(reply, 'utf-8')) 
+        reply = base64.b64encode(bytes(reply, 'utf-8')).decode("utf-8") + "," + base64.b64encode(challenge).decode("utf-8")
+        reply = encMsg(reply, sessionKey, hmac_key)
+        conn.sendall(reply) 
         print("[GATEWAY] Data has been sent!")
     conn.close()
 

@@ -13,6 +13,12 @@ public interface GatewayService extends Remote {
 	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] authCode, byte[] nonce, byte[] signature, byte[] token) throws RemoteException;
 	
 	public List<byte[]> DeleteUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] nonce, byte[] signature, byte[] token) throws RemoteException;
+
+	public List<byte[]> AcceptDevice(byte[] deviceName, byte[] code, byte[] nonce, byte[] signature, byte[] token) throws RemoteException;
+	
+	public List<byte[]> RemoveDevice(byte[] deviceName, byte[] nonce, byte[] signature, byte[] token) throws RemoteException;
+	
+	public List<ArrayList<byte[]>> GetUsers(byte[] nonce, byte[] signature, byte[] token) throws RemoteException;
 	
 	//General Requests
 	public List<ArrayList<byte[]>> GetDeviceStatus(byte[] nonce, byte[] signature, byte[] token) throws RemoteException;

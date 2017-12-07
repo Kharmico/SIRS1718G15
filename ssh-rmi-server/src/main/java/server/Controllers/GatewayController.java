@@ -14,8 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.SynchronousQueue;
 
 import org.joda.time.DateTime;
 
@@ -37,6 +40,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	private ArrayList<String> nonceList = new ArrayList<String>();
 	private EncryptionUtil encUtil = new EncryptionUtil();
 	private List<User> users = new ArrayList<User>();
+	public Set<String> b64keys= new HashSet<String>();
 
 	// GatewayController Constructor
 	public GatewayController() throws RemoteException {
@@ -48,8 +52,6 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 	}
 
 	//GatewayController Endpoints
-	
-
 	public List<byte[]> RegisterUser(byte[] adminUsername, byte[] adminPassword, byte[] name, byte[] password, byte[] authCode, byte[] nonce, byte[] signature, byte[] token) {
 		byte[] dec_nonce = encUtil.decrypt(nonce);
 		try {
@@ -405,12 +407,11 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			String[] strings_nonce = pure_nonce.split("%");
 			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
 
-			System.out.println("BEFORE DECRYPTING SHIT!!!");
 			String usernameToCheck = new String(encUtil.decrypt(username), UTF8);
 			String passwordToCheck = new String(encUtil.decrypt(password), UTF8);
 			String authStringToCheck = new String(encUtil.decrypt(authString), UTF8);
 			String dataToCheck = usernameToCheck + passwordToCheck + authStringToCheck + pure_nonce;
-			
+
 			User user = null;
 			for(User userCheck : users) {
 				if(userCheck.getAuthCode().equals(authStringToCheck) && userCheck.getUsername().equals(usernameToCheck) && 
@@ -424,6 +425,11 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				System.out.println("WRONG REFRESH ATTEMPT: WRONG AUTHCODE VERIFICATION!!!");
 				return null;
 			}
+
+			EncryptionUtil eu = new EncryptionUtil();
+			eu.setPublicKey(encUtil.byteArrayToPubKey(encUtil.base64Decoder(userPublicKey)), user.getUsername());
+			
+			user.setEncUtils(eu);
 			
 			System.out.println("BEFORE FRESHNESS CHECKING!!!");
 			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
@@ -440,6 +446,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			nonceList.add(pure_nonce);
 			Key pubKey = encUtil.byteArrayToPubKey(encUtil.base64Decoder(userPublicKey));
 			user.getEncUtils().setPublicKey(pubKey, usernameToCheck);
+			user.setStatus("VERIFIED");
 			String token = user.generateToken();
 			user.rstAuthCode();
 			return answerRequest("OK", token, user);
@@ -478,7 +485,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				}	
 			}
 			
-			if(user == null) {
+			if(user == null || user.getStatus().equals("PENDING")) {
 				System.out.println("WRONG LOGIN ATTEMPT: LOGIN CRAP VERIFICATION!!!");
 				return null;
 			}
@@ -494,7 +501,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				System.out.println("WRONG LOGIN ATTEMPT: SIGNATURE VERIFICATION!!!");
 				return answerRequest("WRONGSIG", user);
 			}
-			
+
 			nonceList.add(pure_nonce);
 			String token = user.generateToken();
 			return answerRequest("OK", token, user);
@@ -513,17 +520,265 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		byte[] pubKeyGetter = encUtil.pubKeyToByteArray();
 		return encUtil.base64Encoder(pubKeyGetter);
 	}
+
+	public List<byte[]> AcceptDevice(byte[] deviceName, byte[] code, byte[] nonce, byte[] signature, byte[] token) throws RemoteException {
+		byte[] dec_nonce = encUtil.decrypt(nonce);
+		try {
+			// nonce%timestamp
+			String pure_nonce = new String(dec_nonce, UTF8);
+			String[] strings_nonce = pure_nonce.split("%");
+			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
+
+			String tokenToCheck = new String(encUtil.decrypt(token), UTF8);
+			User user = null;
+			for(User userCheck : users) {
+				if(userCheck.lastToken().equals(tokenToCheck)) {
+					user = userCheck;
+					break;
+				}	
+			}
+			
+			if(user == null) {
+				System.out.println("WRONG DEVICECMD ATTEMPT: INVALID TOKEN!!!");
+				return null;
+			}
+			
+			if(!user.getType().equals("ADMIN")) {
+				System.out.println("WRONG TYPE ATTEMPT: NO PERMISSION!!!");
+				return answerRequest("NOPERMISSION", user);
+			}
+			
+			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
+				System.out.println("WRONG DEVICECMD ATTEMPT: FRESHNESS ISSUES!!!");
+				return answerRequest("NOFRESH", user);
+			}
+			
+			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			String deviceToCheck = new String(encUtil.decrypt(deviceName), UTF8);
+			String codeToCheck = new String(encUtil.decrypt(code), UTF8);
+			String dataToCheck = deviceToCheck + codeToCheck + pure_nonce;
+			
+			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
+				System.out.println("WRONG DEVICECMD ATTEMPT: SIGNATURE VERIFICATION!!!");
+				return answerRequest("WRONGSIG", user);
+			}
+			
+			Boolean found = false;
+			for(Device dev : devices) {
+				if(dev.getName().equals(deviceToCheck)) {
+					dev.setAccepted(true);
+					found = true;
+				}
+			}
+			
+			if(!found) {
+				System.out.println("WRONG DEVICECMD ATTEMPT: DEVICE VERIFICATION!!!");
+				return answerRequest("NODEV", user);
+			}
+			
+			b64keys.add(codeToCheck);
+			
+			nonceList.add(pure_nonce);
+			return answerRequest("OK", user);
+			
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			System.out.println("[ERROR] Couldn't generate signature");
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+	
+	public List<byte[]> RemoveDevice(byte[] deviceName, byte[] nonce, byte[] signature, byte[] token) throws RemoteException {
+		byte[] dec_nonce = encUtil.decrypt(nonce);
+		try {
+			// nonce%timestamp
+			String pure_nonce = new String(dec_nonce, UTF8);
+			String[] strings_nonce = pure_nonce.split("%");
+			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
+
+			String tokenToCheck = new String(encUtil.decrypt(token), UTF8);
+			User user = null;
+			for(User userCheck : users) {
+				if(userCheck.lastToken().equals(tokenToCheck)) {
+					user = userCheck;
+					break;
+				}	
+			}
+			
+			if(user == null) {
+				System.out.println("WRONG DEVICECMD ATTEMPT: INVALID TOKEN!!!");
+				return null;
+			}
+			
+			if(!user.getType().equals("ADMIN")) {
+				System.out.println("WRONG TYPE ATTEMPT: NO PERMISSION!!!");
+				return answerRequest("NOPERMISSION", user);
+			}
+			
+			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
+				System.out.println("WRONG DEVICECMD ATTEMPT: FRESHNESS ISSUES!!!");
+				return answerRequest("NOFRESH", user);
+			}
+			
+			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			String deviceToCheck = new String(encUtil.decrypt(deviceName), UTF8);
+			String dataToCheck = deviceToCheck + pure_nonce;
+			
+			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
+				System.out.println("WRONG DEVICECMD ATTEMPT: SIGNATURE VERIFICATION!!!");
+				return answerRequest("WRONGSIG", user);
+			}
+			
+			Boolean found = false;
+			for(Device dev : devices) {
+				if(dev.getName().equals(deviceToCheck)) {
+					dev.setAccepted(true);
+					found = true;
+				}
+			}
+			
+			if(!found) {
+				System.out.println("WRONG DEVICECMD ATTEMPT: DEVICE VERIFICATION!!!");
+				return answerRequest("NODEV", user);
+			}
+			
+			//TODO FAZ AQUI O CODIGO DE REMOVER O DEVICE
+			for ( Map.Entry<String, Helper> e : devConnections.entrySet()){
+				String name = e.getKey();
+				if ( name.equals(deviceName)){
+					try{
+						e.getValue().closeAllConnections();
+						System.out.print(e.getKey() +":");
+						devConnections.remove(e.getKey());
+						System.out.print("REMOVED.\n");
+					}
+					catch(Exception exc){
+						
+					}
+				
+				}
+			}
+			
+			//TODO FIM
+			
+			nonceList.add(pure_nonce);
+			return answerRequest("OK", user);
+			
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			System.out.println("[ERROR] Couldn't generate signature");
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+
+	public List<ArrayList<byte[]>> GetUsers(byte[] nonce, byte[] signature, byte[] token) throws RemoteException {
+		List<ArrayList<byte[]>> answerToRet = new ArrayList<ArrayList<byte[]>>();
+		byte[] dec_nonce = encUtil.decrypt(nonce);
+		try {
+			// nonce%timestamp
+			String pure_nonce = new String(dec_nonce, UTF8);
+			String[] strings_nonce = pure_nonce.split("%");
+			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
+			
+			String tokenToCheck = new String(encUtil.decrypt(token), UTF8);
+			User user = null;
+			for(User userCheck : users) {
+				if(userCheck.lastToken().equals(tokenToCheck)) {
+					user = userCheck;
+					break;
+				}	
+			}
+			
+			if(user == null) {
+				System.out.println("WRONG DEVICESTATUS ATTEMPT: INVALID TOKEN!!!");
+				answerToRet.add((ArrayList) answerRequest("INVALID_TOKEN", user));
+				return answerToRet;
+			}
+			
+			if(!user.getType().equals("ADMIN")) {
+				System.out.println("WRONG TYPE ATTEMPT: NO PERMISSION!!!");
+				answerToRet.add((ArrayList) answerRequest("NOPERMISSION", user));
+				return answerToRet;
+			}
+			
+			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
+				System.out.println("WRONG DEVICESTATUS ATTEMPT: FRESHNESS ISSUES!!!");
+				answerToRet.add((ArrayList) answerRequest("NOFRESH", user));
+				return answerToRet;
+			}
+			
+			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			String dataToCheck = "getListUsers" + pure_nonce;
+			
+			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
+				System.out.println("WRONG DEVICESTATUS ATTEMPT: SIGNATURE VERIFICATION!!!");
+				answerToRet.add((ArrayList) answerRequest("WRONGSIG", user));
+				return answerToRet;
+			}
+			
+			if(users.size() == 0) {
+				System.out.println("WRONG DEVICESTATUS ATTEMPT: NO_USERS!!!");
+				answerToRet.add((ArrayList) answerRequest("NOUSR", user));
+				return answerToRet;
+			}
+			
+			nonceList.add(pure_nonce);
+			return answerRequestUsers(users, user);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			System.out.println("[ERROR] Couldn't generate signature");
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
 	
 	public String registerNewDevice(){
 		return null;
 
 	}
+	
+	public void addKey(String key){
+		b64keys.add(key);
+	}
+	public boolean removeKey(String key){
+		boolean removed = false;
+		for(String k: b64keys) {
+			if (k.equals(key)){
+				b64keys.remove(key);
+				removed = true;
+			}
+		}
+		return removed;
+	}
+	
+	
+	
 	public void startListeningDevices() throws IOException {
 		Thread t1 = new Thread(new Runnable() {
 			public void run() {
 
 				while (true) { /* or some other condition you wish */
-					Socket connection;
+					Socket connection = null;
 					try {
 						System.out.println("Ready to accept another device...");
 						connection = registerSocket.accept(); /* will wait here */
@@ -546,14 +801,20 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 							continue;
 						};
 						String devPort = new String(data, "UTF-8").trim().split(":")[1] ;
-						Helper con = new Helper(connection, Integer.parseInt(devPort)); /* call a nanny to take
-	     	                                                            care of it */
-						devConnections.put(deviceName, con); /* make++ sure you keep a ref to it, just in case */
+						Helper con = new Helper(connection, Integer.parseInt(devPort),b64keys); 
+						con.login();
+						devConnections.put(deviceName, con);
 						con.start();	/* this code is executed when a client connects... */
 						/* tell nanny to get to work as an independent thread */
 
 
-					} catch (IOException e) {
+					} catch (IOException | NullPointerException e ) {
+						try {
+							if(connection != null) 
+								connection.close();
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
 						e.printStackTrace();
 					} 
 				}
@@ -636,6 +897,45 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		return answerReturn;
 	}
 	
+	private List<ArrayList<byte[]>> answerRequestUsers(List<User> reqResponse, User user) throws UnsupportedEncodingException, SignatureException {
+		String timestamp = DateUtil.getTimestamp();
+		String uuid = UUID.randomUUID().toString();
+		String pureNounce = uuid + "%" + timestamp;
+		String pureSignature = "";
+		byte[] sigToSend = null;
+		byte[] nounceToSend = null;
+		List<ArrayList<String>> pureRespDevs = new ArrayList<ArrayList<String>>();
+		
+		for(User usr : reqResponse) {
+			String userName = usr.getUsername();
+			String userType = usr.getType();
+			String userStatus = usr.getStatus();
+			pureRespDevs.add(new ArrayList<String>(Arrays.asList(userName, userType, userStatus)));
+		}
+		
+		pureSignature = pureRespDevs.toString().concat(pureNounce);
+		sigToSend = encUtil.generateSignature(pureSignature.getBytes(UTF8));
+		nounceToSend = user.getEncUtils().encrypt(pureNounce.getBytes(UTF8));
+
+		System.out.println(pureRespDevs.toString());
+		
+		
+		ArrayList<byte[]> answerRequest = new ArrayList<byte[]>();
+		answerRequest.add(nounceToSend);
+		answerRequest.add(sigToSend);
+		List<ArrayList<byte[]>> answerReturn = new ArrayList<ArrayList<byte[]>>();
+		answerReturn.add(answerRequest);
+		for(User usr : reqResponse) {
+			ArrayList<byte[]> aux = new ArrayList<byte[]>();
+			aux.add(user.getEncUtils().encrypt(usr.getUsername().getBytes(UTF8)));
+			aux.add(user.getEncUtils().encrypt(usr.getType().getBytes(UTF8)));
+			aux.add(user.getEncUtils().encrypt(usr.getStatus().getBytes(UTF8)));
+			answerReturn.add(aux);
+		}
+		
+		return answerReturn;
+	}
+	
 	private List<byte[]> answerRequest(String reqResponse, User user) throws UnsupportedEncodingException, SignatureException {
 		String response = reqResponse;
 		String timestamp = DateUtil.getTimestamp();
@@ -699,4 +999,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		devices.add(devs);
 		devices.add(devs2);
 	}
+
+
+	
 }

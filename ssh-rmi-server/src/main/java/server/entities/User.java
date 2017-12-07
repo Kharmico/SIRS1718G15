@@ -16,6 +16,7 @@ public class User {
 	private DateTime loginDate;
 	private PublicKey pubKey;
 	private String authCode;
+	private String status;
 
 	public User(String username, String password, String type){
 		this.username = username;
@@ -23,6 +24,8 @@ public class User {
 		this.type = type;
 		this.encUtils = new EncryptionUtil();
 		this.pubKey = null;
+		this.authCode = "";
+		this.status = "---";
 	}
 	
 	public User(String username, String password, String type, String authCode){
@@ -32,6 +35,7 @@ public class User {
 		this.authCode = authCode;
 		this.encUtils = new EncryptionUtil();
 		this.pubKey = null;
+		this.status = "PENDING";
 	}
 	
 //	public User(String username, String password, String type, Key pubKey){
@@ -43,6 +47,14 @@ public class User {
 //		this.pubKey = this.encUtils.getPublicKey();
 //	}
 	
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
 	public String getUsername() {
 		return username;
 	}
@@ -81,6 +93,10 @@ public class User {
 
 	public EncryptionUtil getEncUtils() {
 		return encUtils;
+	}
+	
+	public void setEncUtils(EncryptionUtil encUtils) {
+		this.encUtils = encUtils;
 	}
 	
 	public String getAuthCode() {
