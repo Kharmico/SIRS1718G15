@@ -29,6 +29,7 @@ public class Helper extends Thread{
 	private volatile String deviceState = "";
 	private String deviceKey ="";
 	private String sessionKey="";
+	private String tempSessionKey="";
 	private byte[] Hmac_key;
 	private volatile byte[] challenge;
 
@@ -50,12 +51,43 @@ public class Helper extends Thread{
 			String temp[] = processMessage(devState).split(","); // [b64 ACK/NACK, b64Challenge]
 			this.challenge = enc.base64SDecoder(temp[1]);
 			message = new String(enc.base64SDecoder(temp[0]));
-			//deviceState = "";
 			return message;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return "Not able to get state of device. Please try again.";
+
+	}
+	
+	public String renewSessionKey() {
+
+		try {
+			
+			
+			byte sessionkey[] = enc.secureRandom(16);
+			String newSessionKey = enc.base64SEncoder(sessionkey);
+			this.tempSessionKey = newSessionKey;
+
+			String m = "RENEW " + newSessionKey + "," + enc.base64SEncoder(challenge);			// [SESSIONKEY, CHALLENGE]Dk, H(S,Ch), IV
+
+			m = encryptMessage(m, deviceKey);
+
+			OUTout.write(m.getBytes());				//SEND session key
+			byte[] bytes = new byte[1024];
+
+			OUTin.read(bytes);						//Expect thing encrypted with new Session key
+			String devState[] = new String(bytes, "UTF-8").trim().split(":");
+			
+			String temp[] = processMessage(devState).split(","); // [b64 ACK/NACK, b64Challenge]
+			this.challenge = enc.base64SDecoder(temp[1]);
+			String message = new String(enc.base64SDecoder(temp[0]));
+			if(message.equals("ACK"))
+				this.sessionKey = newSessionKey;
+			return message;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "Not able to renew key of device. Please try again.";
 
 	}
 
@@ -226,6 +258,7 @@ public class Helper extends Thread{
 		return msg;
 
 	}
+	
 
 	public String processMessage(String[] cryptogram) throws IOException{
 
@@ -270,7 +303,7 @@ public class Helper extends Thread{
 			//we know which device is this
 			byte[] decryptkey = (enc.base64SDecoder(sessionKey));
 			m = enc.decryptAES(decryptkey, IV, cryptogram[0]);
-			if(m != null){
+			if(m != null){ //try decrypt with session key
 				try {
 					String calculatedMac = enc.calculateHMAC(enc.decryptAESwithPadding(decryptkey, IV, cryptogram[0] ).getBytes(), Hmac_key);
 
@@ -280,9 +313,23 @@ public class Helper extends Thread{
 					e.getMessage();
 				}
 			}
+			else{ // try decrypt with temporary session key
+				decryptkey = (enc.base64SDecoder(tempSessionKey));
+				m = enc.decryptAES(decryptkey, IV, cryptogram[0]);
+				if(m != null){
+					try {
+						String calculatedMac = enc.calculateHMAC(enc.decryptAESwithPadding(decryptkey, IV, cryptogram[0] ).getBytes(), Hmac_key);
+
+						if(calculatedMac.equals(BufferUtil.toHexString(Hmac)))
+							msg = m;
+					} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
+						e.getMessage();
+					}
+				}
+			}
 
 		}
-		if (m == null){	
+		if (m == null){ //nenhuma das chave deu	ou a mensagem é invalida
 			System.out.println("erro 2: Nao foi possivel decifrar a mensgem");
 			throw new IOException();
 		}

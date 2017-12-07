@@ -282,24 +282,28 @@ def serveGateway(conn):
         decryptedgram = ''
         hmac = ''
         try:
-           decryptedgram = decryptdata(data[0], sessionKey, data[2])
-        except Exception as e:
-            print("["+type(e)+"]Couldn't decrypt with SessionKey. Decrypting with Device Key")
-            try:
+            decryptedgram = decryptdata(data[0], sessionKey, data[2])
+            if decryptedgram == b'':
+                print("[GW]Couldn't decrypt with SessionKey. Decrypting with Device Key")
                 decryptedgram = decryptdata(data[0], factoryKey, data[2])
-            except Exception as e:
-                print("["+type(e)+"]Couldn't decrypt with DeviceKey. Fail")
-                sendACKorNACK(False, conn)
-                continue
-        
-        hmac = calc_Hmac(decryptedgram, hmac_key)
-        decryptedgram = decryptedgram.split(b",")    
-        if (base64.b64decode(decryptedgram[1]) != challenge):
-            print('[GATEWAY CONN]Challenges don\'t match.')
+                if decryptedgram == b'':
+                    raise Exception()
+        except Exception as e:
+            print("["+str(type(e))+"]Couldn't decrypt with DeviceKey. Fail")
             sendACKorNACK(False, conn)
             continue
-        if ( data[1] != hmac):
-            print('[GATEWAY CONN]HMACs don\'t match.')
+        
+        hmac = calc_Hmac(decryptedgram, hmac_key)
+        decryptedgram = decryptedgram.split(b",") 
+        try:
+            if (base64.b64decode(decryptedgram[1]) != challenge):
+                print('[GATEWAY CONN]Challenges don\'t match.')
+               
+            if ( data[1] != hmac):
+                print('[GATEWAY CONN]HMACs don\'t match.')
+                sendACKorNACK(False, conn)
+                continue
+        except:
             sendACKorNACK(False, conn)
             continue
         
@@ -326,6 +330,16 @@ def serveGateway(conn):
         elif command == 'KILL':
             print("Our device is shutting down.")
             return
+        elif command.startswith( 'RENEW' ):
+            try:            
+                key = command.split()
+                sessionKey = base64.b64decode(key[1])
+                reply = 'ACK'
+            except Exception as e:
+                print(str(e))
+                reply = 'NACK'
+            #getSessionKey
+            
         else:
             reply = '[GATEWAY]Unknown Command'
         reply = base64.b64encode(bytes(reply, 'utf-8')).decode("utf-8") + "," + base64.b64encode(challenge).decode("utf-8")
