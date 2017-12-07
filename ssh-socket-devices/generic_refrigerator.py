@@ -108,7 +108,7 @@ def switchState():
 
 def encryptdata(data, secretkey):     
     iv =  Random.new().read(AES.block_size)
-    cipher = AES.new(factoryKey, AES.MODE_CBC, iv)
+    cipher = AES.new(secretkey, AES.MODE_CBC, iv)
     
     paddeddata = pad(data)
     cypherpart = cipher.encrypt(paddeddata)
@@ -184,12 +184,25 @@ def login(sock):
         data = data.decode('utf-8')
         data = data.strip()
         getSessionKey(data, factoryKey)
-        
+        generateNewChallenge()
+        auth2 = base64.b64encode(b"ACK").decode("utf-8") + "," +base64.b64encode(challenge).decode("utf-8")
+        cryptogram = encMsg(auth2,sessionKey,hmac_key)
+        #print("LOGIN KEY:"+str(sessionKey)+ "LOGIN IV:" + 
+        sock.sendall(cryptogram)
         
         #print(str(data))
     except Exception as inst:
         print("login error:" + str(inst))
-        
+ 
+def sendACKorNACK(boolean, sock):
+    m = ''
+    if boolean == True:
+        m = base64.b64encode(b"ACK").decode("utf-8") + "," + base64.b64encode(challenge).decode("utf-8")
+    else:
+        m = base64.b64encode(b"NACK").decode("utf-8")+ ","  + base64.b64encode(challenge).decode("utf-8")
+    cryptogram = encMsg(m,sessionKey,hmac_key)
+    sock.sendall(cryptogram)
+    
 def dataTransfer(conn, s):
     global GateWaySocket,GateWaySocketListen, GateWaySocketSendCmds 
     # A big loop that sends/receives data until told not to.
@@ -263,9 +276,11 @@ def serveGateway(conn):
             data = decB64Msg(data)      # [ [c,ch]:h:iv].
         except Exception as e:
             print("Error" + str(e))
+            sendACKorNACK(False, conn)
             continue
   
         decryptedgram = ''
+        hmac = ''
         try:
            decryptedgram = decryptdata(data[0], sessionKey, data[2])
         except Exception as e:
@@ -274,16 +289,28 @@ def serveGateway(conn):
                 decryptedgram = decryptdata(data[0], factoryKey, data[2])
             except Exception as e:
                 print("["+type(e)+"]Couldn't decrypt with DeviceKey. Fail")
+                sendACKorNACK(False, conn)
                 continue
-            
+        
+        hmac = calc_Hmac(decryptedgram, hmac_key)
         decryptedgram = decryptedgram.split(b",")    
         if (base64.b64decode(decryptedgram[1]) != challenge):
             print('[GATEWAY CONN]Challenges don\'t match.')
+            sendACKorNACK(False, conn)
+            continue
+        if ( data[1] != hmac):
+            print('[GATEWAY CONN]HMACs don\'t match.')
+            sendACKorNACK(False, conn)
             continue
         
-        data = decryptedgram[0]
+        generateNewChallenge()
         
-        command = str(data)
+        data = decryptedgram[0]
+        try:
+            command = data.decode()
+        except AttributeError as e:
+            command = str(data)
+            
         reply = ""
         if command == "GETSTATUS":
             reply = GETSTATUS()
@@ -301,7 +328,9 @@ def serveGateway(conn):
             return
         else:
             reply = '[GATEWAY]Unknown Command'
-        conn.sendall(bytes(reply, 'utf-8')) 
+        reply = base64.b64encode(bytes(reply, 'utf-8')).decode("utf-8") + "," + base64.b64encode(challenge).decode("utf-8")
+        reply = encMsg(reply, sessionKey, hmac_key)
+        conn.sendall(reply) 
         print("[GATEWAY] Data has been sent!")
     conn.close()
 
