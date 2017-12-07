@@ -25,7 +25,7 @@ GateWayOutPort = 0
 
 state = ["OFF", "REFRIGERATING", "COOLING_DOWN"]
 curState = 0
-myName = "Refrigerator " + str(randint(0,10))
+myName = "Refrigerator" + str(randint(0,100))
 myType = "Fridge"
 
 factoryKey = ''             #bytes
