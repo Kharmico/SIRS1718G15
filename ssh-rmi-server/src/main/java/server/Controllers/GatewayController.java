@@ -48,7 +48,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		User user = new User("admin", "admin", "ADMIN");
 		user.getEncUtils().setKeyPaths("keys/adminUserPublicKey.key", "");
 		users.add(user);
-		setDevicesTestingPurposes();
+		//setDevicesTestingPurposes();
 	}
 
 	//GatewayController Endpoints
@@ -418,6 +418,8 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			e.printStackTrace();
 		} catch (SignatureException e) {
 			System.out.println("[ERROR] Couldn't generate signature");
+			e.printStackTrace();
+		} catch (Exception e){
 			e.printStackTrace();
 		}
 

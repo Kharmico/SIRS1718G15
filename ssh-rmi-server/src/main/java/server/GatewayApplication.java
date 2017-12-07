@@ -87,7 +87,12 @@ public class GatewayApplication {
 					Map<String, Helper> devConnections = stub.devConnections;
 					if(devConnections == null) continue;
 					for ( Map.Entry<String, Helper> e : devConnections.entrySet()){
-						String state = e.getValue().renewSessionKey();
+						String state;
+						try {
+							state = e.getValue().renewSessionKey();
+						} catch (Exception e1) {
+							state = null;
+						}
 						if ( state == null ) state = "Null";
 						System.out.println(e.getKey() +":"+ state);
 					}

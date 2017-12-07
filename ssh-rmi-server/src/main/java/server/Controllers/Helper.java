@@ -14,6 +14,8 @@ import java.security.SignatureException;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import javax.swing.plaf.synth.SynthSeparatorUI;
+
 import server.entities.Device;
 import utils.BufferUtil;
 import utils.EncryptionUtil;
@@ -34,6 +36,10 @@ public class Helper extends Thread{
 	private String tempSessionKey="";
 	private byte[] Hmac_key;
 	private volatile byte[] challenge;
+	
+	private volatile int keyRenewedTimes = 0;
+	public volatile boolean isValidDevice = true;
+	private final int SESKEY_EXPIRE_TIME= 5000;
 
 	private LinkedBlockingQueue <String> msgToSend = new LinkedBlockingQueue <String>();
 	private EncryptionUtil enc = new EncryptionUtil();
@@ -97,16 +103,16 @@ public class Helper extends Thread{
 			message = new String(enc.base64SDecoder(temp[0]));
 			return message;
 		} catch (Exception e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 		return "Not able to switch state of device. Please try again.";
 
 	}
 	
-	public String renewSessionKey() {
+	public String renewSessionKey() throws Exception{
 
-		try {
-			
+	
+			int nrRenews = this.keyRenewedTimes +1;
 			
 			byte sessionkey[] = enc.secureRandom(16);
 			String newSessionKey = enc.base64SEncoder(sessionkey);
@@ -125,13 +131,13 @@ public class Helper extends Thread{
 			String temp[] = processMessage(devState).split(","); // [b64 ACK/NACK, b64Challenge]
 			this.challenge = enc.base64SDecoder(temp[1]);
 			String message = new String(enc.base64SDecoder(temp[0]));
-			if(message.equals("ACK"))
+			if(message.equals("ACK")){
 				this.sessionKey = newSessionKey;
-			return message;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return "Not able to renew key of device. Please try again.";
+				this.keyRenewedTimes = nrRenews;
+				return message;
+			}
+			else
+				return "Not able to renew key of device. Please try again.";
 
 	}
 	
@@ -153,86 +159,30 @@ public class Helper extends Thread{
 	}
 
 	public void run(){
-
-		/*String teste = "Mensagemparaagateway" + "," + enc.base64SEncoder(challenge);
-
-
-		teste = encryptMessage(teste, sessionKey);
-
-		try {
-			byte[] response = new byte[1024];
-			OUTout.write(teste.getBytes());
-			OUTin.read(response);
-			System.out.println(new String(response));
-		} catch (NullPointerException | IOException e2) {
-			e2.printStackTrace();
-		}*/
-		while(true){
-
-			/*try {
-
-    			byte[] bytes = new byte[1024];
-
-				INin.read(bytes);
-				String rcvdMessage = new String(bytes, "UTF-8").trim();
-				String cryptogram []=  rcvdMessage.split(":");
-
-				if(cryptogram.length!=3) {
-					System.out.println("erro 3 na mensagem"); 
-					throw new IOException();
-				} 
-
-				byte[] Message = enc.base64SDecoder(cryptogram[0]);
-				byte[] Hmac =    enc.base64SDecoder(cryptogram[1]);
-				byte[] IV = 	 enc.base64SDecoder(cryptogram[2]);
-				//System.out.println(Message.length+":"+Hmac.length+":"+IV.length);
-				String m = null;
-				for(String key : keys){
-					byte[] decryptkey = (enc.base64SDecoder(key));
-
-					System.out.println(BufferUtil.toHexString(decryptkey));
-					m = "\""+ enc.decryptAES(decryptkey, IV, cryptogram[0]) + "\"";
-					if(m != null){
-						System.out.println(m);
-						deviceKey= key;
-						Hmac_key = enc.toSHA1(enc.base64SDecoder(key));
-						System.out.println("HMAC KEY:" + BufferUtil.toHexString(Hmac_key));
-
-						try {
-							System.out.println("Calculated HMac:"+ enc.calculateHMAC(
-														enc.decryptAESwithPadding(decryptkey, IV, cryptogram[0] ).getBytes(), Hmac_key));
-							System.out.println("Message HMac:"+ BufferUtil.toHexString(Hmac));
-						} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
-							e.getMessage();
-						}
-						break;
-					}
+		
+		int errorcount = 0;
+		
+		while(isValidDevice){
+			//PERIODICALLY RENEW SESSION KEY
+			String response =""; 
+			try {
+				Thread.sleep(SESKEY_EXPIRE_TIME);
+				response = renewSessionKey();
+				/*if(!response.equals("ACK")){
+					System.out.println(response);
+					isValidDevice=false;
+				}*/
+			} catch (Exception e) {
+				if(!response.equals("ACK")){
+					System.out.println("Coulnd't renew session key with device " + deviceName);
+					isValidDevice=false;
+					break;
 				}
-				if (m == null)	System.out.println("erro 4 na mensagem");
+			}
 
-				//new EncryptionUtil().calculateHMAC(Message, key);
-				System.out.println(rcvdMessage);
-//				//if(i > 0) System.out.println(state.trim());
-
-				//Thread.sleep(3000);		// Each 3 seconds, polls the device
-
-			}/*catch(SocketException e){
-				// When the connection closes
-				System.out.println("TODO: DEVICE CONN FAIL");
-			}catch (IOException | InterruptedException  e) {
-				e.printStackTrace();
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
-				continue;
-			} 
-			 */
 		}
 
 	}
-	//implement your methods here
 	public void pollMsgToSend(String m) {
 		try {
 			msgToSend.put(m);
@@ -263,16 +213,13 @@ public class Helper extends Thread{
 
 		m = encryptMessage(m, deviceKey);
 
-		//byte[] cryptmsg = enc.encryptAESwithPadding(enc.base64SDecoder(deviceKey), IV, enc.base64SEncoder(m.getBytes()));
-
 		try {
-			//String seskey = enc.base64SEncoder(cryptmsg) +":"+ enc.base64SEncoder(enc.calculateHMACb(m.getBytes(), Hmac_key)) +":"+ enc.base64SEncoder(IV);
-			//INout.write(seskey.getBytes());
 			INout.write(m.getBytes());
 			
 		} catch (NullPointerException e) {
 			throw new IOException(e.getMessage());
 		}
+		
 		bytes = new byte[1028];
 		INin.read(bytes);
 		rcvdMessage = new String(bytes, "UTF-8").trim();
@@ -283,6 +230,7 @@ public class Helper extends Thread{
 		if(new String(enc.base64SDecoder(devicemsg[0])).equals("NACK"))
 			throw new IOException();
 		
+		//IF reached here, all ok.
 		Device d = new Device(deviceName,devicedata[1],devicedata[2], this);
 		return d;
 	}
@@ -413,5 +361,9 @@ public class Helper extends Thread{
 		INout.close();
 		socketIN.close();
 		socketOUT.close();
+	}
+
+	public int getKeyRenewedTimes() {
+		return keyRenewedTimes;
 	}
 }

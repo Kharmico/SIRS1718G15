@@ -81,7 +81,12 @@ public class Device {
 			h.switchDeviceState();
 		}
 		else if (com.equals("RENEW")){
-			h.renewSessionKey();
+			String res="";
+			try {
+				res = h.renewSessionKey();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		
 		else if (com.contains("SETSTATE")){

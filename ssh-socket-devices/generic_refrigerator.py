@@ -35,6 +35,8 @@ hmac_key = ''               #bytes
 challenge = os.urandom(4)   #bytes
 sessionKey = ''             #bytes
 
+keyrenewTimes = 0
+
 BLOCK_SIZE = 16  # Bytes for AES encryption
 
 pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * \
@@ -228,8 +230,8 @@ def dataTransfer(conn, s):
             reply = GETSTATUS()
             print (command)
             print (reply)
-        elif command == 'REPEAT':
-            reply = REPEAT(data)
+        elif command == 'CHECKRENEW':
+            reply = str(keyrenewTimes)
         elif command == 'SWITCH':
             reply = switchState()
         elif command == 'EXIT':
@@ -251,7 +253,7 @@ def dataTransfer(conn, s):
             GateWaySocket.connect((URL[0], int(URL[1])))
             #print (socket.getaddrinfo(URL[0], int(URL[1])))
             buffer_size = 100            
-            reply = myName + '\n'
+            reply = sdf + '\n'
             GateWaySocket.sendall(bytes(myName + ":" + str(GateWaySocketListen.getsockname()[1]) , 'utf-8'))
             try:
                 _thread.start_new_thread( serveGateway, (GateWaySocket, ) )
@@ -273,7 +275,7 @@ def dataTransfer(conn, s):
 
 def serveGateway(conn):
     print ("Handling Gateway")
-    global sessionKey, customState
+    global sessionKey, customState, keyrenewTimes
     while True:
         # Receive the data
         data = conn.recv(1028) # receive the data
@@ -348,6 +350,7 @@ def serveGateway(conn):
                 key = command.split()
                 sessionKey = base64.b64decode(key[1])
                 reply = 'ACK'
+                keyrenewTimes +=1
             except Exception as e:
                 print(str(e))
                 reply = 'NACK'
