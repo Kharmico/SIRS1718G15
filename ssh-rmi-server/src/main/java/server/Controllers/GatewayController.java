@@ -479,7 +479,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			User user = null;
 			for(User userCheck : users) {
 				if(userCheck.getUsername().equals(usernameToCheck) && userCheck.getPassword().equals(passwordToCheck) && 
-						userCheck.lastToken().equals("")) {
+						userCheck.getAuthCode().equals("")) {
 					user = userCheck;
 					break;
 				}	

@@ -38,15 +38,6 @@ public class User {
 		this.status = "PENDING";
 	}
 	
-//	public User(String username, String password, String type, Key pubKey){
-//		this.username = username;
-//		this.setPassword(password);
-//		this.type = type;
-//		this.encUtils = new EncryptionUtil();
-//		encUtils.setPublicKey(pubKey, username+"User");
-//		this.pubKey = this.encUtils.getPublicKey();
-//	}
-	
 	public String getStatus() {
 		return status;
 	}
