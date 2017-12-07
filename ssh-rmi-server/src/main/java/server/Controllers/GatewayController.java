@@ -60,7 +60,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			String[] strings_nonce = pure_nonce.split("%");
 			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
 
-			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			System.out.println("REGISTER: BEFORE DECRYPTING!!!");
 			String usernameToCheck = new String(encUtil.decrypt(name), UTF8);
 			String passwordToCheck = new String(encUtil.decrypt(password), UTF8);
 			String adminUserToCheck = new String(encUtil.decrypt(adminUsername), UTF8);
@@ -77,31 +77,31 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			if(user == null) {
-				System.out.println("WRONG DELETE ATTEMPT: LOGIN CRAP VERIFICATION!!!");
+				System.out.println("WRONG REGISTER ATTEMPT: WRONG LOGIN!!!");
 				return null;
 			}
 			
-			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			System.out.println("REGISTER: BEFORE FRESHNESS CHECKING!!!");
 			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
 				System.out.println("WRONG REGISTER ATTEMPT: FRESHNESS ISSUES!!!");
 				return answerRequest("NOFRESH", user);
 			}
 			
-			System.out.println("BEFORE DECRYPTING TOKEN!!!");
+			System.out.println("REGISTER: BEFORE DECRYPTING TOKEN!!!");
 			String tokenToCheck = new String(encUtil.decrypt(token), UTF8);
 			if(!tokenToCheck.equals(user.lastToken())) {
 				System.out.println("WRONG REGISTER ATTEMPT: INVALID TOKEN!!!");
 				return answerRequest("INVALID_TOKEN", user);
 			}
 			
-			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			System.out.println("REGISTER: BEFORE SIGNATURE VERIFICATION CHECKING!!!");
 			String dataToCheck = adminUserToCheck + adminPassToCheck + usernameToCheck + passwordToCheck + pureAuthCode + pure_nonce;
 			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
 				System.out.println("WRONG REGISTER ATTEMPT: SIGNATURE VERIFICATION!!!");
 				return answerRequest("WRONGSIG", user);
 			}
 			
-			System.out.println("BEFORE USER ALREADY EXISTS CHECKING!!!\n");
+			System.out.println("REGISTER: BEFORE USER ALREADY EXISTS CHECKING!!!\n");
 			for(User userCheck : users) {
 				if(userCheck.getUsername().equals(usernameToCheck)) {
 					System.out.println("WRONG REGISTER ATTEMPT: WRONG LOGIN OR USER EXISTS VERIFICATION!!!");
@@ -133,7 +133,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			String[] strings_nonce = pure_nonce.split("%");
 			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
 
-			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			System.out.println("DELETE: BEFORE DECRYPTING!!!");
 			String usernameToCheck = new String(encUtil.decrypt(name), UTF8);
 			String adminUserToCheck = new String(encUtil.decrypt(adminUsername), UTF8);
 			String adminPassToCheck = new String(encUtil.decrypt(adminPassword), UTF8);
@@ -149,11 +149,11 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			if(user == null) {
-				System.out.println("WRONG DELETE ATTEMPT: LOGIN CRAP VERIFICATION!!!");
+				System.out.println("WRONG DELETE ATTEMPT: WRONG LOGIN!!!");
 				return null;
 			}
 			
-			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			System.out.println("DELETE: BEFORE FRESHNESS CHECKING!!!");
 			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
 				System.out.println("WRONG DELETE ATTEMPT: FRESHNESS ISSUES!!!");
 				return answerRequest("NOFRESH", user);
@@ -165,13 +165,13 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				return answerRequest("INVALID_TOKEN", user);
 			}
 			
-			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			System.out.println("DELETE: BEFORE SIGNATURE VERIFICATION CHECKING!!!");
 			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
 				System.out.println("WRONG DELETE ATTEMPT: SIGNATURE VERIFICATION!!!");
 				return answerRequest("WRONGSIG", user);
 			}
 			
-			System.out.println("BEFORE USER ALREADY EXISTS CHECKING!!!\n");
+			System.out.println("DELETE: BEFORE USER ALREADY EXISTS CHECKING!!!\n");
 			for(User userCheck : users) {
 				if(userCheck.getUsername().equals(usernameToCheck)) {
 					nonceList.add(pure_nonce);
@@ -226,10 +226,10 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				return answerToRet;
 			}
 			
-			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			System.out.println("DEVICESTATUS: BEFORE DECRYPTING!!!");
 			String dataToCheck = "getDeviceStatus" + pure_nonce;
 			
-			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			System.out.println("DEVIVESTATUS: BEFORE SIGNATURE VERIFICATION CHECKING!!!");
 			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
 				System.out.println("WRONG DEVICESTATUS ATTEMPT: SIGNATURE VERIFICATION!!!");
 				answerToRet.add((ArrayList) answerRequest("WRONGSIG", user));
@@ -278,17 +278,17 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				return null;
 			}
 			
-			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			System.out.println("DEVICECMD: BEFORE FRESHNESS CHECKING!!!");
 			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
 				System.out.println("WRONG DEVICECMD ATTEMPT: FRESHNESS ISSUES!!!");
 				return answerRequest("NOFRESH", user);
 			}
 			
-			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			System.out.println("DEVICECMD: BEFORE DECRYPTING!!!");
 			String deviceToCheck = new String(encUtil.decrypt(deviceName), UTF8);
 			String dataToCheck = deviceToCheck + pure_nonce;
 			
-			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			System.out.println("DEVICECMD: BEFORE SIGNATURE VERIFICATION CHECKING!!!");
 			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
 				System.out.println("WRONG DEVICECMD ATTEMPT: SIGNATURE VERIFICATION!!!");
 				return answerRequest("WRONGSIG", user);
@@ -347,18 +347,18 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 				return null;
 			}
 			
-			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			System.out.println("SENDCMD: BEFORE FRESHNESS CHECKING!!!");
 			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
 				System.out.println("WRONG SENDCMD ATTEMPT: FRESHNESS ISSUES!!!");
 				return answerRequest("NOFRESH", user);
 			}
 			
-			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			System.out.println("SENDCMD: BEFORE DECRYPTING!!!");
 			String deviceToCheck = new String(encUtil.decrypt(deviceName), UTF8);
 			String commandToCheck = new String(encUtil.decrypt(command), UTF8);
 			String dataToCheck = deviceToCheck + commandToCheck + pure_nonce;
 			
-			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			System.out.println("SENDCMD: BEFORE SIGNATURE VERIFICATION CHECKING!!!");
 			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
 				System.out.println("WRONG SENDCMD ATTEMPT: SIGNATURE VERIFICATION!!!");
 				return answerRequest("WRONGSIG", user);
@@ -371,7 +371,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			if(devCmds.isEmpty()) {
-				System.out.println("WRONG DEVICECMD ATTEMPT: DEVICE VERIFICATION!!!");
+				System.out.println("SENDCMD: WRONG DEVICECMD ATTEMPT: DEVICE VERIFICATION!!!");
 				return answerRequest("NODEV", user);
 			}
 			
@@ -422,7 +422,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			if(user == null) {
-				System.out.println("WRONG REFRESH ATTEMPT: WRONG AUTHCODE VERIFICATION!!!");
+				System.out.println("WRONG FIRSTLOGIN ATTEMPT: WRONG AUTHCODE VERIFICATION!!!");
 				return null;
 			}
 
@@ -431,15 +431,15 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			
 			user.setEncUtils(eu);
 			
-			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			System.out.println("FIRSTLOGIN: BEFORE FRESHNESS CHECKING!!!");
 			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
-				System.out.println("WRONG REFRESH ATTEMPT: FRESHNESS ISSUES!!!");
+				System.out.println("WRONG FIRSTLOGIN ATTEMPT: FRESHNESS ISSUES!!!");
 				return answerRequest("NOFRESH", user);
 			}
 			
-			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			System.out.println("FIRSTLOGIN: BEFORE SIGNATURE VERIFICATION CHECKING!!!");
 			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
-				System.out.println("WRONG REFRESH ATTEMPT: SIGNATURE VERIFICATION!!!");
+				System.out.println("WRONG FIRSTLOGIN ATTEMPT: SIGNATURE VERIFICATION!!!");
 				return answerRequest("WRONGSIG", user);
 			}
 			
@@ -471,7 +471,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			String[] strings_nonce = pure_nonce.split("%");
 			DateTime nonceDate = (DateTime) DateUtil.convertDate(strings_nonce[1]);
 
-			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			System.out.println("LOGIN: BEFORE DECRYPTING!!!");
 			String usernameToCheck = new String(encUtil.decrypt(username), UTF8);
 			String passwordToCheck = new String(encUtil.decrypt(password), UTF8);
 			String dataToCheck = usernameToCheck + passwordToCheck + pure_nonce;
@@ -486,17 +486,17 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			if(user == null || user.getStatus().equals("PENDING")) {
-				System.out.println("WRONG LOGIN ATTEMPT: LOGIN CRAP VERIFICATION!!!");
+				System.out.println("WRONG LOGIN ATTEMPT: WRONG LOGIN!!!");
 				return null;
 			}
 			
-			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			System.out.println("LOGIN: BEFORE FRESHNESS CHECKING!!!");
 			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
 				System.out.println("WRONG LOGIN ATTEMPT: FRESHNESS ISSUES!!!");
 				return answerRequest("NOFRESH", user);
 			}
 			
-			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			System.out.println("LOGIN: BEFORE SIGNATURE VERIFICATION CHECKING!!!");
 			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
 				System.out.println("WRONG LOGIN ATTEMPT: SIGNATURE VERIFICATION!!!");
 				return answerRequest("WRONGSIG", user);
@@ -539,27 +539,27 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			if(user == null) {
-				System.out.println("WRONG DEVICECMD ATTEMPT: INVALID TOKEN!!!");
+				System.out.println("WRONG ACCEPTDEV ATTEMPT: INVALID TOKEN!!!");
 				return null;
 			}
 			
 			if(!user.getType().equals("ADMIN")) {
-				System.out.println("WRONG TYPE ATTEMPT: NO PERMISSION!!!");
+				System.out.println("WRONG ACCEPTDEV ATTEMPT: NO PERMISSION!!!");
 				return answerRequest("NOPERMISSION", user);
 			}
 			
 			System.out.println("BEFORE FRESHNESS CHECKING!!!");
 			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
-				System.out.println("WRONG DEVICECMD ATTEMPT: FRESHNESS ISSUES!!!");
+				System.out.println("WRONG ACCEPTDEV ATTEMPT: FRESHNESS ISSUES!!!");
 				return answerRequest("NOFRESH", user);
 			}
 			
-			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			System.out.println("ACCEPTDEV: BEFORE DECRYPTING!!!");
 			String deviceToCheck = new String(encUtil.decrypt(deviceName), UTF8);
 			String codeToCheck = new String(encUtil.decrypt(code), UTF8);
 			String dataToCheck = deviceToCheck + codeToCheck + pure_nonce;
 			
-			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			System.out.println("ACCEPTDEV: BEFORE SIGNATURE VERIFICATION CHECKING!!!");
 			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
 				System.out.println("WRONG DEVICECMD ATTEMPT: SIGNATURE VERIFICATION!!!");
 				return answerRequest("WRONGSIG", user);
@@ -574,7 +574,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			if(!found) {
-				System.out.println("WRONG DEVICECMD ATTEMPT: DEVICE VERIFICATION!!!");
+				System.out.println("WRONG ACCEPTDEV ATTEMPT: DEVICE VERIFICATION!!!");
 				return answerRequest("NODEV", user);
 			}
 			
@@ -613,28 +613,28 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			if(user == null) {
-				System.out.println("WRONG DEVICECMD ATTEMPT: INVALID TOKEN!!!");
+				System.out.println("WRONG RMDEV ATTEMPT: INVALID TOKEN!!!");
 				return null;
 			}
 			
 			if(!user.getType().equals("ADMIN")) {
-				System.out.println("WRONG TYPE ATTEMPT: NO PERMISSION!!!");
+				System.out.println("WRONG RMDEV ATTEMPT: NO PERMISSION!!!");
 				return answerRequest("NOPERMISSION", user);
 			}
 			
-			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			System.out.println("RMDEV: BEFORE FRESHNESS CHECKING!!!");
 			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
-				System.out.println("WRONG DEVICECMD ATTEMPT: FRESHNESS ISSUES!!!");
+				System.out.println("WRONG RMDEV ATTEMPT: FRESHNESS ISSUES!!!");
 				return answerRequest("NOFRESH", user);
 			}
 			
-			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			System.out.println("RMDEV: BEFORE DECRYPTING SHIT!!!");
 			String deviceToCheck = new String(encUtil.decrypt(deviceName), UTF8);
 			String dataToCheck = deviceToCheck + pure_nonce;
 			
-			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
+			System.out.println("RMDEV: BEFORE SIGNATURE VERIFICATION CHECKING!!!");
 			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
-				System.out.println("WRONG DEVICECMD ATTEMPT: SIGNATURE VERIFICATION!!!");
+				System.out.println("WRONG RMDEV ATTEMPT: SIGNATURE VERIFICATION!!!");
 				return answerRequest("WRONGSIG", user);
 			}
 			
@@ -647,7 +647,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			if(!found) {
-				System.out.println("WRONG DEVICECMD ATTEMPT: DEVICE VERIFICATION!!!");
+				System.out.println("WRONG RMDEV ATTEMPT: DEVICE VERIFICATION!!!");
 				return answerRequest("NODEV", user);
 			}
 			
@@ -704,36 +704,36 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 			}
 			
 			if(user == null) {
-				System.out.println("WRONG DEVICESTATUS ATTEMPT: INVALID TOKEN!!!");
+				System.out.println("WRONG GETUSERS ATTEMPT: INVALID TOKEN!!!");
 				answerToRet.add((ArrayList) answerRequest("INVALID_TOKEN", user));
 				return answerToRet;
 			}
 			
 			if(!user.getType().equals("ADMIN")) {
-				System.out.println("WRONG TYPE ATTEMPT: NO PERMISSION!!!");
+				System.out.println("WRONG GETUSERS ATTEMPT: NO PERMISSION!!!");
 				answerToRet.add((ArrayList) answerRequest("NOPERMISSION", user));
 				return answerToRet;
 			}
 			
-			System.out.println("BEFORE FRESHNESS CHECKING!!!");
+			System.out.println("GETUSERS: BEFORE FRESHNESS CHECKING!!!");
 			if(!DateUtil.checkFreshnessMinutes(nonceDate, 2) || nonceList.contains(pure_nonce)) {
-				System.out.println("WRONG DEVICESTATUS ATTEMPT: FRESHNESS ISSUES!!!");
+				System.out.println("WRONG GETUSERS ATTEMPT: FRESHNESS ISSUES!!!");
 				answerToRet.add((ArrayList) answerRequest("NOFRESH", user));
 				return answerToRet;
 			}
 			
-			System.out.println("BEFORE DECRYPTING SHIT!!!");
+			System.out.println("GETUSERS: BEFORE DECRYPTING SHIT!!!");
 			String dataToCheck = "getListUsers" + pure_nonce;
 			
 			System.out.println("BEFORE SIGNATURE VERIFICATION CHECKING!!!");
 			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
-				System.out.println("WRONG DEVICESTATUS ATTEMPT: SIGNATURE VERIFICATION!!!");
+				System.out.println("WRONG GETUSERS ATTEMPT: SIGNATURE VERIFICATION!!!");
 				answerToRet.add((ArrayList) answerRequest("WRONGSIG", user));
 				return answerToRet;
 			}
 			
 			if(users.size() == 0) {
-				System.out.println("WRONG DEVICESTATUS ATTEMPT: NO_USERS!!!");
+				System.out.println("WRONG GETUSERS ATTEMPT: NO_USERS!!!");
 				answerToRet.add((ArrayList) answerRequest("NOUSR", user));
 				return answerToRet;
 			}
