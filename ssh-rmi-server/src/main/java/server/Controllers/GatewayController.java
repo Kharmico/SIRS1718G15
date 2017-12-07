@@ -588,7 +588,7 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 
 			System.out.println("ACCEPTDEV: BEFORE SIGNATURE VERIFICATION CHECKING!!!");
 			if(!user.getEncUtils().verifySignature(dataToCheck.getBytes(UTF8), signature)) {
-				System.out.println("WRONG DEVICECMD ATTEMPT: SIGNATURE VERIFICATION!!!");
+				System.out.println("WRONG ACCEPTDEV ATTEMPT: SIGNATURE VERIFICATION!!!");
 				return answerRequest("WRONGSIG", user);
 			}
 
@@ -1035,7 +1035,4 @@ public class GatewayController extends UnicastRemoteObject implements GatewaySer
 		devices.add(devs);
 		devices.add(devs2);
 	}
-
-
-
 }
